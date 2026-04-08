@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest . -t blank-typescript --no-install)",
+      "Bash(npm view:*)",
+      "Bash(export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH)",
+      "Bash(grep -r estimatedItemSize /Users/yaroslavpikiner/Desktop/lumisalon/node_modules/@shopify/flash-list/ --include=*.d.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(npx expo:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$HOME/.nvm/versions/node/*/bin:$PATH\")",
+      "Bash(npm install:*)",
+      "Bash(/opt/homebrew/bin/npm install:*)",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash(source \"$NVM_DIR/nvm.sh\")",
+      "Bash(/usr/local/bin/node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Read(//opt/homebrew/Cellar/node/25.5.0/bin/**)",
+      "Read(//Users/yaroslavpikiner/.nvm/versions/node/**)",
+      "Bash(/opt/homebrew/bin/node ./node_modules/.bin/tsc --noEmit)",
+      "Bash(npm uninstall:*)",
+      "Bash(/opt/homebrew/bin/node /opt/homebrew/lib/node_modules/npm/bin/npm-cli.js uninstall react-native-unistyles)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(~/.nvm/versions/node/v22.8.0/bin/npm uninstall:*)",
+      "Bash(PATH=\"$HOME/.nvm/versions/node/v22.8.0/bin:$PATH\" npm uninstall react-native-unistyles)",
+      "Bash(PATH=\"$HOME/.nvm/versions/node/v22.8.0/bin:$PATH\" /usr/local/bin/node ./node_modules/.bin/tsc --noEmit)",
+      "Bash(/usr/local/bin/node ./node_modules/.bin/tsc --noEmit)",
+      "Bash(pod install:*)",
+      "Read(//opt/homebrew/Cellar/cocoapods/1.16.2_1/bin/**)",
+      "Bash(gem which:*)",
+      "Bash(xargs ls:*)",
+      "Bash(mkdir -p /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons)",
+      "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-default.png)",
+      "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-dark.png)",
+      "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-gold.png)",
+      "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-minimal.png)",
+      "Bash(npx skills:*)"
+    ]
+  }
+}

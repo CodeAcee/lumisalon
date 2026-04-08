@@ -1,0 +1,89 @@
+{
+  "expo": {
+    "name": "LumiSalon",
+    "slug": "lumisalon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "lumisalon",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lumisalon.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF8F5"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.lumisalon.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#D4A88C",
+          "sounds": []
+        }
+      ],
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you add work photos to procedures."
+        }
+      ],
+      [
+        "expo-alternate-app-icons",
+        {
+          "icons": [
+            {
+              "name": "dark",
+              "ios": {
+                "images": "./assets/icons/icon-dark.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/icon-dark.png",
+                "backgroundColor": "#2D2321"
+              }
+            },
+            {
+              "name": "gold",
+              "ios": {
+                "images": "./assets/icons/icon-gold.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/icon-gold.png",
+                "backgroundColor": "#C8A76C"
+              }
+            },
+            {
+              "name": "minimal",
+              "ios": {
+                "images": "./assets/icons/icon-minimal.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/icon-minimal.png",
+                "backgroundColor": "#F5F0ED"
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  }
+}

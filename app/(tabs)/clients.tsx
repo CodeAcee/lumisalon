@@ -1,0 +1,176 @@
+import { useCallback, useMemo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Keyboard,
+} from "react-native";
+import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Search, Plus, X } from "lucide-react-native";
+import { FlashList } from "@shopify/flash-list";
+import { FontSize, BorderRadius } from "../../src/constants/theme";
+import { useColors } from "../../src/theme/ThemeContext";
+import { ClientCard } from "../../src/components/ui/ClientCard";
+import { ListSkeleton } from "../../src/components/ui/SkeletonCard";
+import { useAppStore } from "../../src/store";
+import type { Client } from "../../src/types";
+
+// Stable separator — defined outside component so reference never changes
+const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
+const SEPARATOR_STYLE = { height: 10 };
+
+export default function ClientsScreen() {
+  const colors = useColors();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  const clientSearch = useAppStore((state) => state.clientSearch);
+  const setClientSearch = useAppStore((state) => state.setClientSearch);
+  const getFilteredClients = useAppStore((state) => state.getFilteredClients);
+  const allClients = useAppStore((state) => state.clients);
+  const locations = useAppStore((state) => state.locations);
+
+  const filtered = getFilteredClients();
+  const isInitialLoad = allClients.length === 0 && !clientSearch;
+
+  // Stable empty component
+  const ListEmpty = useMemo(
+    () => (
+      <View style={s.emptyCard}>
+        <Text style={s.emptyText}>No clients found</Text>
+      </View>
+    ),
+    [s],
+  );
+
+  const renderClient = useCallback(
+    ({ item }: { item: Client }) => {
+      const locationName = item.locationId
+        ? locations.find((l) => l.id === item.locationId)?.name
+        : undefined;
+      return (
+        <ClientCard
+          client={item}
+          locationName={locationName}
+          onPress={() => router.push(`/client/${item.id}`)}
+        />
+      );
+    },
+    [locations],
+  );
+
+  const keyExtractor = useCallback((item: Client) => item.id, []);
+
+  return (
+    <Pressable
+      style={[s.container, { paddingTop: insets.top }]}
+      onPress={Keyboard.dismiss}
+    >
+      <View style={s.header}>
+        <Text style={s.title}>Clients</Text>
+        <Pressable
+          onPress={() => router.push("/client/create")}
+          style={[s.iconBtn, s.plusBtn]}
+        >
+          <Plus size={20} color={colors.textOnAccent} />
+        </Pressable>
+      </View>
+
+      <View style={s.searchContainer}>
+        <Search size={18} color={colors.textTertiary} />
+        <TextInput
+          value={clientSearch}
+          onChangeText={setClientSearch}
+          placeholder="Search clients..."
+          placeholderTextColor={colors.textTertiary}
+          style={s.searchInput}
+          returnKeyType="search"
+        />
+        {clientSearch.length > 0 && (
+          <Pressable onPress={() => setClientSearch("")}>
+            <X size={16} color={colors.textTertiary} />
+          </Pressable>
+        )}
+      </View>
+
+      {isInitialLoad ? (
+        <View style={s.skeletonWrap}>
+          {SKELETON_KEYS.map((k) => (
+            <ListSkeleton key={k} />
+          ))}
+        </View>
+      ) : (
+        <FlashList
+          data={filtered}
+          renderItem={renderClient}
+          keyExtractor={keyExtractor}
+          ItemSeparatorComponent={ItemSeparator}
+          ListEmptyComponent={ListEmpty}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        />
+      )}
+    </Pressable>
+  );
+}
+
+const SKELETON_KEYS = [0, 1, 2, 3, 4];
+
+function makeStyles(c: ReturnType<typeof useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bgPrimary },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    title: {
+      fontSize: FontSize.heading,
+      fontWeight: "700",
+      color: c.textPrimary,
+    },
+    iconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.bgChip,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    plusBtn: { backgroundColor: c.accent },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.bgSearch,
+      borderRadius: BorderRadius.md,
+      height: 44,
+      paddingHorizontal: 16,
+      gap: 8,
+      marginHorizontal: 20,
+      marginBottom: 12,
+    },
+    searchInput: { flex: 1, fontSize: FontSize.body, color: c.textPrimary },
+    skeletonWrap: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
+    list: {
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 100,
+    },
+    emptyCard: {
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.lg,
+      padding: 32,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    emptyText: { fontSize: FontSize.md, color: c.textTertiary },
+  });
+}
