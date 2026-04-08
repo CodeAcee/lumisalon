@@ -34,7 +34,19 @@
       "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-dark.png)",
       "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-gold.png)",
       "Bash(cp /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-minimal.png)",
-      "Bash(npx skills:*)"
+      "Bash(npx skills:*)",
+      "Bash(identify /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png)",
+      "Bash(identify /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-default.png)",
+      "Bash(python3 -c ':*)",
+      "Bash(magick -list font)",
+      "Bash(fc-list)",
+      "Bash(ls /System/Library/Fonts/*.ttf /System/Library/Fonts/*.otf)",
+      "Bash(magick -size 1024x1024 -define gradient:angle=145 'gradient:#EDCFBA-#C4926A' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icon.png)",
+      "Bash(magick -size 1024x1024 -define gradient:angle=145 'gradient:#EDCFBA-#C4926A' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 560 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/adaptive-icon.png)",
+      "Bash(magick -size 1024x1024 'xc:#2D2321' -gravity center -fill '#D4A88C' -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-dark.png)",
+      "Bash(magick -size 1024x1024 'xc:#C8A76C' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-gold.png)",
+      "Bash(magick -size 1024x1024 'xc:#F5F0ED' -gravity center -fill '#D4A88C' -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-minimal.png)",
+      "Bash(magick -size 1024x1024 -define gradient:angle=145 'gradient:#EDCFBA-#C4926A' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-default.png)"
     ]
   }
 }

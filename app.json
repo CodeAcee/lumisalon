@@ -23,7 +23,10 @@
         "backgroundColor": "#FFF8F5"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.lumisalon.app"
+      "package": "com.lumisalon.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -84,6 +87,13 @@
           ]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "820f0bfa-b484-4795-8f1f-4a9baa25f489"
+      }
+    },
+    "owner": "deymosdevs-organization"
   }
 }
