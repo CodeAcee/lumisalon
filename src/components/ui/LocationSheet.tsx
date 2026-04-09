@@ -68,8 +68,11 @@ export function LocationSheet({
 
       <BottomSheetScrollView
         showsVerticalScrollIndicator={false}
-        style={s.list}
-        contentContainerStyle={{ paddingBottom: bottom + 16 }}
+        contentContainerStyle={[
+          s.scrollContent,
+          { paddingBottom: bottom + 16 },
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
         {showAll && (
           <Pressable
@@ -141,6 +144,9 @@ export function LocationSheet({
 
 const styles = (c: ReturnType<typeof useColors>) =>
   StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: 16,
+    },
     header: {
       flexDirection: "row",
       alignItems: "center",

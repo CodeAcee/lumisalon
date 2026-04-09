@@ -19,7 +19,14 @@ import { useAppStore } from "../../store";
 import { format } from "date-fns";
 import type { Position } from "../../types";
 
-const POSITIONS: Position[] = ["Nails", "Hair", "Skin", "Lashes", "Lashmaker", "Colorist"];
+const POSITIONS: Position[] = [
+  "Nails",
+  "Hair",
+  "Skin",
+  "Lashes",
+  "Lashmaker",
+  "Colorist",
+];
 
 interface Props {
   visible: boolean;
@@ -29,7 +36,7 @@ interface Props {
 export function FilterSheet({ visible, onClose }: Props) {
   const colors = useColors();
   const s = styles(colors);
-  const insets = useSafeAreaInsets();
+  const { bottom } = useSafeAreaInsets();
 
   const masters = useAppStore((s) => s.masters);
   const procedureFilters = useAppStore((s) => s.procedureFilters);
@@ -47,14 +54,13 @@ export function FilterSheet({ visible, onClose }: Props) {
   if (!visible) return null;
 
   return (
-    <AppSheet
-      snapPoints={["70%"]}
-      index={0}
-      portal
-      onClose={onClose}
-    >
+    <AppSheet snapPoints={["70%"]} index={0} portal onClose={onClose}>
       <BottomSheetScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={[
+          s.scrollContent,
+          { paddingBottom: bottom + 16 },
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={s.header}>
           <Text style={s.title}>Filters</Text>
@@ -74,7 +80,12 @@ export function FilterSheet({ visible, onClose }: Props) {
             <Chip
               label="All"
               active={!filterMasterId}
-              onPress={() => setProcedureFilters({ ...procedureFilters, masterId: undefined })}
+              onPress={() =>
+                setProcedureFilters({
+                  ...procedureFilters,
+                  masterId: undefined,
+                })
+              }
             />
             {masters.map((m) => (
               <Chip
@@ -103,7 +114,12 @@ export function FilterSheet({ visible, onClose }: Props) {
             <Chip
               label="All"
               active={!procedureFilters.position}
-              onPress={() => setProcedureFilters({ ...procedureFilters, position: undefined })}
+              onPress={() =>
+                setProcedureFilters({
+                  ...procedureFilters,
+                  position: undefined,
+                })
+              }
             />
             {POSITIONS.map((pos) => (
               <Chip
@@ -113,7 +129,8 @@ export function FilterSheet({ visible, onClose }: Props) {
                 onPress={() =>
                   setProcedureFilters({
                     ...procedureFilters,
-                    position: procedureFilters.position === pos ? undefined : pos,
+                    position:
+                      procedureFilters.position === pos ? undefined : pos,
                   })
                 }
               />
@@ -126,16 +143,28 @@ export function FilterSheet({ visible, onClose }: Props) {
         <View style={s.dateRow}>
           <Pressable
             style={s.dateBtn}
-            onPress={() => { setShowToPicker(false); setShowFromPicker(true); }}
+            onPress={() => {
+              setShowToPicker(false);
+              setShowFromPicker(true);
+            }}
           >
             <Calendar size={15} color={colors.textSecondary} />
-            <Text style={[s.dateBtnText, filterDateFrom && s.dateBtnTextActive]}>
-              {filterDateFrom ? format(new Date(filterDateFrom), "MMM d, yyyy") : "From"}
+            <Text
+              style={[s.dateBtnText, filterDateFrom && s.dateBtnTextActive]}
+            >
+              {filterDateFrom
+                ? format(new Date(filterDateFrom), "MMM d, yyyy")
+                : "From"}
             </Text>
             {filterDateFrom && (
               <Pressable
                 hitSlop={8}
-                onPress={() => setProcedureFilters({ ...procedureFilters, dateFrom: undefined })}
+                onPress={() =>
+                  setProcedureFilters({
+                    ...procedureFilters,
+                    dateFrom: undefined,
+                  })
+                }
               >
                 <X size={13} color={colors.textTertiary} />
               </Pressable>
@@ -146,16 +175,26 @@ export function FilterSheet({ visible, onClose }: Props) {
 
           <Pressable
             style={s.dateBtn}
-            onPress={() => { setShowFromPicker(false); setShowToPicker(true); }}
+            onPress={() => {
+              setShowFromPicker(false);
+              setShowToPicker(true);
+            }}
           >
             <Calendar size={15} color={colors.textSecondary} />
             <Text style={[s.dateBtnText, filterDateTo && s.dateBtnTextActive]}>
-              {filterDateTo ? format(new Date(filterDateTo), "MMM d, yyyy") : "To"}
+              {filterDateTo
+                ? format(new Date(filterDateTo), "MMM d, yyyy")
+                : "To"}
             </Text>
             {filterDateTo && (
               <Pressable
                 hitSlop={8}
-                onPress={() => setProcedureFilters({ ...procedureFilters, dateTo: undefined })}
+                onPress={() =>
+                  setProcedureFilters({
+                    ...procedureFilters,
+                    dateTo: undefined,
+                  })
+                }
               >
                 <X size={13} color={colors.textTertiary} />
               </Pressable>
@@ -171,7 +210,11 @@ export function FilterSheet({ visible, onClose }: Props) {
             maximumDate={filterDateTo ? new Date(filterDateTo) : undefined}
             onChange={(_, date) => {
               if (Platform.OS === "android") setShowFromPicker(false);
-              if (date) setProcedureFilters({ ...procedureFilters, dateFrom: date.toISOString() });
+              if (date)
+                setProcedureFilters({
+                  ...procedureFilters,
+                  dateFrom: date.toISOString(),
+                });
             }}
             style={Platform.OS === "ios" ? s.inlinePicker : undefined}
           />
@@ -184,7 +227,11 @@ export function FilterSheet({ visible, onClose }: Props) {
             minimumDate={filterDateFrom ? new Date(filterDateFrom) : undefined}
             onChange={(_, date) => {
               if (Platform.OS === "android") setShowToPicker(false);
-              if (date) setProcedureFilters({ ...procedureFilters, dateTo: date.toISOString() });
+              if (date)
+                setProcedureFilters({
+                  ...procedureFilters,
+                  dateTo: date.toISOString(),
+                });
             }}
             style={Platform.OS === "ios" ? s.inlinePicker : undefined}
           />
@@ -209,6 +256,9 @@ export function FilterSheet({ visible, onClose }: Props) {
 
 const styles = (c: ReturnType<typeof useColors>) =>
   StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: 16,
+    },
     content: { paddingHorizontal: 20, paddingTop: 4 },
     header: {
       flexDirection: "row",

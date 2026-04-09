@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 import { useColors } from "../../theme/ThemeContext";
 
-// Allows useRef<AppSheet>
 export type AppSheet = BottomSheet | null;
 
 type Props = React.ComponentPropsWithoutRef<typeof BottomSheet> & {
