@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lumisalon.app"
+      "bundleIdentifier": "com.lumisalon.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "appleTeamId": "2KMYL9B2AV"
     },
     "android": {
       "adaptiveIcon": {
