@@ -169,7 +169,12 @@ export default function ClientDetailScreen() {
           </Text>
           <Pressable
             style={styles.addVisitBtn}
-            onPress={() => router.push("/procedure/create")}
+            onPress={() =>
+              router.push({
+                pathname: "/procedure/create",
+                params: { clientId: id },
+              })
+            }
           >
             <Plus size={16} color={colors.textOnAccent} />
             <Text style={styles.addVisitText}>

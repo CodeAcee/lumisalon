@@ -23,6 +23,9 @@ const en = {
     error: "Error",
     success: "Success",
     optional: "optional",
+    camera: "Camera",
+    gallery: "Gallery",
+    choosePhotoSource: "Add Photo",
   },
 
   // ─── Tab bar ──────────────────────────────────────────────────────────────
@@ -299,6 +302,7 @@ const en = {
     notesPlaceholder: "Add notes...",
     photos: "Photos",
     addPhoto: "Add Photo",
+    addMorePhotos: "Add more",
     selectClient: "Select Client",
     selectMaster: "Select Master",
     selectLocation: "Select Location",

@@ -9,6 +9,9 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActionSheetIOS,
+  Dimensions,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +26,7 @@ import {
   Check,
   Plus,
   MapPin,
+  Calendar,
 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +34,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { create } from "zustand";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
-import { useColors } from "../../src/theme/ThemeContext";
+import { useColors, useTheme } from "../../src/theme/ThemeContext";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Button } from "../../src/components/ui/Button";
 import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { Chip } from "../../src/components/ui/Chip";
@@ -41,9 +46,11 @@ import {
   BottomSheetFlatList,
   BottomSheetTextInput,
 } from "@gorhom/bottom-sheet";
+import { format } from "date-fns";
 import { useAppStore, useUIStore, useAuthStore } from "../../src/store";
 import { procedureSchema, type ProcedureFormData } from "../../src/lib/schemas";
-import type { Client, Master, Position } from "../../src/types";
+import { date } from "zod";
+import { Client, Master, Position } from "@/types";
 
 // ── Local photo state (no useState — Zustand) ──────────────────────────────
 const useCreateProcStore = create<{
@@ -71,11 +78,17 @@ const DEFAULT_POSITIONS: Position[] = [
 const MAX_PHOTOS = 10;
 
 export default function CreateProcedureScreen() {
-  const { editId, locationId: defaultLocationId } = useLocalSearchParams<{
+  const {
+    editId,
+    locationId: defaultLocationId,
+    clientId: defaultClientId,
+  } = useLocalSearchParams<{
     editId?: string;
     locationId?: string;
+    clientId?: string;
   }>();
   const colors = useColors();
+  const { isDark } = useTheme();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -93,6 +106,10 @@ export default function CreateProcedureScreen() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     existingProc?.locationId ?? defaultLocationId ?? null,
   );
+  const [procedureDate, setProcedureDate] = useState<Date>(
+    existingProc?.date ? new Date(existingProc.date) : new Date(),
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
 
@@ -135,7 +152,9 @@ export default function CreateProcedureScreen() {
     resolver: zodResolver(procedureSchema),
     defaultValues: {
       masterId: isEditMode ? existingProc?.masterId || "" : "",
-      clientId: isEditMode ? existingProc?.clientId || "" : "",
+      clientId: isEditMode
+        ? existingProc?.clientId || ""
+        : defaultClientId || "",
       positions: isEditMode ? existingProc?.positions || [] : [],
       notes: isEditMode ? existingProc?.notes || "" : "",
     },
@@ -204,19 +223,62 @@ export default function CreateProcedureScreen() {
 
   const isLoading = useAuthStore((s) => s.isLoading);
 
-  const pickImages = async () => {
+  const pickFromGallery = async () => {
     const remaining = MAX_PHOTOS - photos.length;
     if (remaining <= 0) return;
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.85,
     });
-
     if (!result.canceled) {
       addPhotos(result.assets.map((a) => a.uri));
+    }
+  };
+
+  const pickFromCamera = async () => {
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(t("common.error"), "Camera permission is required.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (!result.canceled) {
+      addPhotos(result.assets.map((a) => a.uri));
+    }
+  };
+
+  const pickImages = () => {
+    if (photos.length >= MAX_PHOTOS) return;
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [
+            t("common.cancel"),
+            t("common.camera"),
+            t("common.gallery"),
+          ],
+          cancelButtonIndex: 0,
+          title: t("common.choosePhotoSource"),
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) pickFromCamera();
+          else if (buttonIndex === 2) pickFromGallery();
+        },
+      );
+    } else {
+      Alert.alert(t("common.choosePhotoSource"), undefined, [
+        { text: t("common.camera"), onPress: pickFromCamera },
+        { text: t("common.gallery"), onPress: pickFromGallery },
+        { text: t("common.cancel"), style: "cancel" },
+      ]);
     }
   };
 
@@ -233,11 +295,14 @@ export default function CreateProcedureScreen() {
     };
 
     if (isEditMode && editId) {
-      updateProcedure(editId, procData);
+      updateProcedure(editId, {
+        ...procData,
+        date: procedureDate.toISOString(),
+      });
     } else {
       addProcedure({
         id: `p${Date.now()}`,
-        date: new Date().toISOString(),
+        date: procedureDate.toISOString(),
         ...procData,
       });
     }
@@ -263,6 +328,12 @@ export default function CreateProcedureScreen() {
         >
           <X size={20} color={colors.textPrimary} />
         </Pressable>
+
+        <Text style={styles.headerTitle}>
+          {isEditMode
+            ? t("procedureForm.editTitle")
+            : t("procedureForm.newTitle")}
+        </Text>
 
         <View style={{ width: 40 }} />
       </View>
@@ -300,6 +371,39 @@ export default function CreateProcedureScreen() {
             </Text>
             <ChevronRight size={18} color={colors.textTertiary} />
           </Pressable>
+
+          {/* Date & Time */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.dateTime").toUpperCase()}
+          </Text>
+          <Pressable
+            style={styles.selectorCard}
+            onPress={() => setShowDatePicker((v) => !v)}
+          >
+            <Calendar size={18} color={colors.textTertiary} />
+            <Text style={[styles.selectorText, styles.selectorSelected]}>
+              {format(procedureDate, "MMM d, yyyy")}
+            </Text>
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
+          <View style={styles.datePickerContainer}>
+            {showDatePicker && (
+              <DateTimePicker
+                mode="date"
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                themeVariant={isDark ? "dark" : "light"}
+                value={procedureDate}
+                maximumDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)}
+                onValueChange={(_, date) => {
+                  if (Platform.OS === "android") setShowDatePicker(false);
+                  if (date) setProcedureDate(date);
+                }}
+                style={
+                  Platform.OS === "ios" ? styles.inlineDatePicker : undefined
+                }
+              />
+            )}
+          </View>
 
           {/* Master selector */}
           <Text style={styles.sectionLabel}>
@@ -431,40 +535,52 @@ export default function CreateProcedureScreen() {
             PHOTOS ({photos.length}/{MAX_PHOTOS})
           </Text>
 
-          {/* Photo grid */}
-          {photos.length > 0 && (
-            <View style={styles.photoGrid}>
-              {photos.map((uri) => (
-                <View key={uri} style={styles.photoThumb}>
-                  <Image
-                    source={{ uri }}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                  <Pressable
-                    style={styles.photoRemoveBtn}
-                    onPress={() => removePhoto(uri)}
-                    hitSlop={4}
-                  >
-                    <X size={12} color="#fff" />
-                  </Pressable>
-                </View>
-              ))}
-              {photos.length < MAX_PHOTOS && (
-                <Pressable style={styles.photoAddThumb} onPress={pickImages}>
-                  <ImagePlus size={22} color={colors.textTertiary} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoStrip}
+          >
+            {photos.map((uri, index) => (
+              <View
+                key={uri}
+                style={[
+                  styles.photoThumb,
+                  index === 0 && styles.photoThumbHero,
+                ]}
+              >
+                <Image
+                  source={{ uri }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  transition={200}
+                />
+                <Pressable
+                  style={styles.photoRemoveBtn}
+                  onPress={() => removePhoto(uri)}
+                  hitSlop={6}
+                >
+                  <X size={11} color="#fff" />
                 </Pressable>
-              )}
-            </View>
-          )}
+              </View>
+            ))}
 
-          {/* Add photos button (when no photos yet) */}
-          {photos.length === 0 && (
-            <Pressable style={styles.photoCard} onPress={pickImages}>
-              <ImagePlus size={24} color={colors.textTertiary} />
-              <Text style={styles.photoText}>
-                {t("procedureForm.addPhoto")}
+            {photos.length === 0 && (
+              <Pressable style={styles.photoAddThumbEmpty} onPress={pickImages}>
+                <View style={styles.photoAddIconCircle}>
+                  <ImagePlus size={28} color={colors.accent} />
+                </View>
+                <Text style={styles.photoAddLabel}>
+                  {t("procedureForm.addPhoto")}
+                </Text>
+              </Pressable>
+            )}
+          </ScrollView>
+
+          {photos.length > 0 && photos.length < MAX_PHOTOS && (
+            <Pressable style={styles.photoAddMoreBtn} onPress={pickImages}>
+              <ImagePlus size={16} color={colors.accent} />
+              <Text style={styles.photoAddMoreText}>
+                {t("procedureForm.addMorePhotos")}
               </Text>
             </Pressable>
           )}
@@ -640,7 +756,9 @@ export default function CreateProcedureScreen() {
   );
 }
 
-const THUMB_SIZE = 90;
+const SCREEN_W = Dimensions.get("window").width;
+const THUMB_SIZE = 110;
+const HERO_SIZE = SCREEN_W - 32 * 2;
 
 function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
@@ -752,8 +870,22 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     noteInput: { fontSize: FontSize.md, color: c.textPrimary, minHeight: 100 },
 
-    // Photo grid
-    photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    inlineDatePicker: {
+      marginHorizontal: -4,
+      marginBottom: 4,
+    },
+    datePickerContainer: {
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    // Photo strip
+    photoStrip: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      paddingBottom: 4,
+    },
     photoThumb: {
       width: THUMB_SIZE,
       height: THUMB_SIZE,
@@ -761,13 +893,18 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       overflow: "hidden",
       backgroundColor: c.bgChip,
     },
+    photoThumbHero: {
+      width: HERO_SIZE,
+      height: HERO_SIZE * 0.65,
+      borderRadius: BorderRadius.lg,
+    },
     photoRemoveBtn: {
       position: "absolute",
-      top: 4,
-      right: 4,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
+      top: 6,
+      right: 6,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       backgroundColor: "rgba(0,0,0,0.55)",
       alignItems: "center",
       justifyContent: "center",
@@ -782,20 +919,43 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: c.bgCard,
+      gap: 6,
     },
-    photoCard: {
+    photoAddThumbEmpty: {
+      width: HERO_SIZE,
+      height: 140,
+      borderRadius: BorderRadius.lg,
+    },
+    photoAddIconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: c.bgChip,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    photoAddLabel: {
+      fontSize: FontSize.md,
+      color: c.textSecondary,
+      fontWeight: "500",
+    },
+    photoAddMoreBtn: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: c.bgCard,
+      gap: 8,
+      paddingVertical: 12,
       borderRadius: BorderRadius.md,
       borderWidth: 1.5,
       borderColor: c.border,
       borderStyle: "dashed",
-      height: 80,
-      gap: 10,
+      backgroundColor: c.bgCard,
     },
-    photoText: { fontSize: FontSize.md, color: c.textTertiary },
+    photoAddMoreText: {
+      fontSize: FontSize.md,
+      color: c.accent,
+      fontWeight: "600",
+    },
 
     bottomBar: {
       paddingHorizontal: 16,

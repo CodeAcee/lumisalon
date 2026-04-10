@@ -23,6 +23,9 @@ const uk = {
     error: "Помилка",
     success: "Успіх",
     optional: "необов'язково",
+    camera: "Камера",
+    gallery: "Галерея",
+    choosePhotoSource: "Додати фото",
   },
 
   // ─── Tab bar ──────────────────────────────────────────────────────────────
@@ -288,7 +291,7 @@ const uk = {
 
   // ─── Procedure Create / Edit ──────────────────────────────────────────────
   procedureForm: {
-    newTitle: "Нова процедура",
+    newTitle: "Додати процедуру",
     editTitle: "Редагувати процедуру",
     client: "Клієнт",
     master: "Майстер",
@@ -300,6 +303,7 @@ const uk = {
     notesPlaceholder: "Додати нотатки...",
     photos: "Фото",
     addPhoto: "Додати фото",
+    addMorePhotos: "Додати ще",
     selectClient: "Обрати клієнта",
     selectMaster: "Обрати майстра",
     selectLocation: "Обрати локацію",

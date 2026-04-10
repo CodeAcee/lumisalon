@@ -15,7 +15,7 @@ import { Calendar, X } from "lucide-react-native";
 import { AppSheet } from "../ui/AppSheet";
 import { Chip } from "../ui/Chip";
 import { FontSize, BorderRadius } from "../../constants/theme";
-import { useColors } from "../../theme/ThemeContext";
+import { useColors, useTheme } from "../../theme/ThemeContext";
 import { useAppStore } from "../../store";
 import { format } from "date-fns";
 import type { Position } from "../../types";
@@ -36,6 +36,7 @@ interface Props {
 
 export function FilterSheet({ visible, onClose }: Props) {
   const colors = useColors();
+  const { isDark } = useTheme();
   const s = styles(colors);
   const { bottom } = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -214,40 +215,46 @@ export function FilterSheet({ visible, onClose }: Props) {
           </Pressable>
         </View>
 
-        {showFromPicker && (
-          <DateTimePicker
-            mode="date"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            value={filterDateFrom ? new Date(filterDateFrom) : new Date()}
-            maximumDate={filterDateTo ? new Date(filterDateTo) : undefined}
-            onValueChange={(_, date) => {
-              if (Platform.OS === "android") setShowFromPicker(false);
-              if (date)
-                setProcedureFilters({
-                  ...procedureFilters,
-                  dateFrom: date.toISOString(),
-                });
-            }}
-            style={Platform.OS === "ios" ? s.inlinePicker : undefined}
-          />
-        )}
-        {showToPicker && (
-          <DateTimePicker
-            mode="date"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            value={filterDateTo ? new Date(filterDateTo) : new Date()}
-            minimumDate={filterDateFrom ? new Date(filterDateFrom) : undefined}
-            onValueChange={(_, date) => {
-              if (Platform.OS === "android") setShowToPicker(false);
-              if (date)
-                setProcedureFilters({
-                  ...procedureFilters,
-                  dateTo: date.toISOString(),
-                });
-            }}
-            style={Platform.OS === "ios" ? s.inlinePicker : undefined}
-          />
-        )}
+        <View style={s.datePickerContainer}>
+          {showFromPicker && (
+            <DateTimePicker
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              themeVariant={isDark ? "dark" : "light"}
+              value={filterDateFrom ? new Date(filterDateFrom) : new Date()}
+              maximumDate={filterDateTo ? new Date(filterDateTo) : undefined}
+              onValueChange={(_, date) => {
+                if (Platform.OS === "android") setShowFromPicker(false);
+                if (date)
+                  setProcedureFilters({
+                    ...procedureFilters,
+                    dateFrom: date.toISOString(),
+                  });
+              }}
+              style={Platform.OS === "ios" ? s.inlinePicker : undefined}
+            />
+          )}
+          {showToPicker && (
+            <DateTimePicker
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              themeVariant={isDark ? "dark" : "light"}
+              value={filterDateTo ? new Date(filterDateTo) : new Date()}
+              minimumDate={
+                filterDateFrom ? new Date(filterDateFrom) : undefined
+              }
+              onValueChange={(_, date) => {
+                if (Platform.OS === "android") setShowToPicker(false);
+                if (date)
+                  setProcedureFilters({
+                    ...procedureFilters,
+                    dateTo: date.toISOString(),
+                  });
+              }}
+              style={Platform.OS === "ios" ? s.inlinePicker : undefined}
+            />
+          )}
+        </View>
 
         <Pressable
           style={[s.clearBtn, { marginTop: 16 }]}
@@ -318,5 +325,9 @@ const styles = (c: ReturnType<typeof useColors>) =>
       fontSize: FontSize.md,
       fontWeight: "600",
       color: c.textSecondary,
+    },
+    datePickerContainer: {
+      justifyContent: "center",
+      alignItems: "center",
     },
   });

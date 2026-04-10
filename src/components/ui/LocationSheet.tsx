@@ -78,7 +78,7 @@ export function LocationSheet({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           s.scrollContent,
-          { paddingBottom: bottom + 16 },
+          { paddingBottom: bottom + 16, paddingTop: 20 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
