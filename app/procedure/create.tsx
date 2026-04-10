@@ -394,7 +394,7 @@ export default function CreateProcedureScreen() {
                 themeVariant={isDark ? "dark" : "light"}
                 value={procedureDate}
                 maximumDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)}
-                onValueChange={(_, date) => {
+                onChange={(_, date) => {
                   if (Platform.OS === "android") setShowDatePicker(false);
                   if (date) setProcedureDate(date);
                 }}
