@@ -7,7 +7,7 @@ import { Portal } from "react-native-paper";
 import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
-import { useColors } from "../../theme/ThemeContext";
+import { useColors, useTheme } from "../../theme/ThemeContext";
 
 export type AppSheet = BottomSheet | null;
 
@@ -38,11 +38,16 @@ export const AppSheet = ({
 }: Props) => {
   const { top } = useSafeAreaInsets();
   const colors = useColors();
-  const styles = makeStyles(colors);
+  const { isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
 
-  const handleChange = (index: number) => {
+  const handleChange = (
+    index: number,
+    position: number,
+    animatedPosition: number,
+  ) => {
     if (index === -1) onClose?.();
-    onChange?.(index);
+    onChange?.(index, position, animatedPosition);
   };
 
   const sheet = (
@@ -100,7 +105,7 @@ export const useStatefulSheet = <T,>(
   return [ref, state, open, onClose] as const;
 };
 
-const makeStyles = (colors: ReturnType<typeof useColors>) =>
+const makeStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) =>
   StyleSheet.create({
     cross: {
       position: "absolute",
@@ -113,6 +118,12 @@ const makeStyles = (colors: ReturnType<typeof useColors>) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    bg: { backgroundColor: colors.bgCard },
+    bg: {
+      backgroundColor: isDark ? "rgb(28,22,20)" : "rgb(255,251,249)",
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+    },
     handle: { backgroundColor: colors.border },
   });

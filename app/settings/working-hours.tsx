@@ -12,6 +12,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Clock, ChevronRight } from "lucide-react-native";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
@@ -38,6 +39,7 @@ export default function WorkingHoursScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const workingHours = useSettingsStore((s) => s.workingHours);
   const updateDayHours = useSettingsStore((s) => s.updateDayHours);
   const notifications = useSettingsStore((s) => s.notifications);
@@ -99,7 +101,7 @@ export default function WorkingHoursScreen() {
         >
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Working Hours</Text>
+        <Text style={styles.headerTitle}>{t("workingHours.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -111,10 +113,11 @@ export default function WorkingHoursScreen() {
           <View style={styles.clockIcon}>
             <Clock size={24} color={colors.accent} />
           </View>
-          <Text style={styles.headerCardTitle}>Set Your Schedule</Text>
+          <Text style={styles.headerCardTitle}>
+            {t("workingHours.cardTitle")}
+          </Text>
           <Text style={styles.headerCardSub}>
-            Tap a time to edit. You'll get a reminder 10 min before your shift
-            starts and ends each day.
+            {t("workingHours.cardSubtitle")}
           </Text>
         </Animated.View>
 
@@ -133,7 +136,7 @@ export default function WorkingHoursScreen() {
                       !day.enabled && styles.dayDisabled,
                     ]}
                   >
-                    {day.day}
+                    {t(`workingHours.days.${day.day}`)}
                   </Text>
 
                   {day.enabled ? (
@@ -155,7 +158,9 @@ export default function WorkingHoursScreen() {
                       </Pressable>
                     </View>
                   ) : (
-                    <Text style={styles.closedText}>Closed</Text>
+                    <Text style={styles.closedText}>
+                      {t("workingHours.closed")}
+                    </Text>
                   )}
                 </View>
                 <AppSwitch
@@ -167,10 +172,7 @@ export default function WorkingHoursScreen() {
           ))}
         </View>
 
-        <Text style={styles.hint}>
-          Reminders fire 10 minutes before your shift starts and ends. Enable
-          "Appointment Reminders" in Notifications to activate.
-        </Text>
+        <Text style={styles.hint}>{t("workingHours.hint")}</Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>

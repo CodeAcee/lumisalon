@@ -1,7 +1,17 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Alert,
+  Linking,
+} from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Phone,
@@ -31,6 +41,7 @@ export default function ClientDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const styles = makeStyles(colors);
+  const { t } = useTranslation();
   const client = useAppStore((s) => s.clients.find((c) => c.id === id));
   // Select the whole array (stable reference), filter in useMemo to avoid infinite re-renders
   const allProcedures = useAppStore((s) => s.procedures);
@@ -44,12 +55,12 @@ export default function ClientDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Client",
-      "Are you sure you want to delete this client? This action cannot be undone.",
+      t("clientDetail.deleteClient"),
+      t("clientDetail.deleteConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => {
             removeClient(id);
@@ -75,7 +86,7 @@ export default function ClientDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Client Profile</Text>
+        <Text style={styles.headerTitle}>{t("clientDetail.title")}</Text>
         <Pressable
           style={styles.editBtn}
           onPress={() =>
@@ -91,13 +102,19 @@ export default function ClientDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile section */}
-        <View style={styles.profileSection}>
+        <Animated.View
+          entering={FadeInDown.delay(60).duration(400)}
+          style={styles.profileSection}
+        >
           <Avatar name={client.name} size={72} />
           <Text style={styles.clientName}>{client.name}</Text>
-        </View>
+        </Animated.View>
 
         {/* Contact info */}
-        <View style={styles.infoCard}>
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(400)}
+          style={styles.infoCard}
+        >
           <Pressable
             style={styles.infoRow}
             onPress={() => Linking.openURL(`tel:${client.phone}`)}
@@ -140,62 +157,75 @@ export default function ClientDetailScreen() {
               </View>
             </>
           )}
-        </View>
+        </Animated.View>
 
         {/* Visit history */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Visit History</Text>
+        <Animated.View
+          entering={FadeInDown.delay(180).duration(400)}
+          style={styles.sectionHeader}
+        >
+          <Text style={styles.sectionTitle}>
+            {t("clientDetail.procedures")}
+          </Text>
           <Pressable
             style={styles.addVisitBtn}
             onPress={() => router.push("/procedure/create")}
           >
             <Plus size={16} color={colors.textOnAccent} />
-            <Text style={styles.addVisitText}>Add Visit</Text>
+            <Text style={styles.addVisitText}>
+              {t("procedureForm.newTitle")}
+            </Text>
           </Pressable>
-        </View>
+        </Animated.View>
 
         {procedures.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No visits yet</Text>
+            <Text style={styles.emptyText}>
+              {t("clientDetail.noProcedures")}
+            </Text>
           </View>
         ) : (
-          procedures.slice(0, 5).map((proc) => {
+          procedures.slice(0, 5).map((proc, i) => {
             const master = masters.find((m) => m.id === proc.masterId);
             return (
-              <Pressable
+              <Animated.View
                 key={proc.id}
-                style={styles.visitCard}
-                onPress={() => router.push(`/procedure/${proc.id}`)}
+                entering={FadeInDown.delay(240 + i * 60).duration(350)}
               >
-                <View style={styles.visitDate}>
-                  <Calendar size={16} color={colors.accent} />
-                  <Text style={styles.visitDateText}>
-                    {format(new Date(proc.date), "MMM d, yyyy · h:mm a")}
-                  </Text>
-                </View>
-                <View style={styles.visitBody}>
-                  <View style={styles.visitRow}>
-                    <User size={14} color={colors.textSecondary} />
-                    <Text style={styles.visitMaster}>
-                      {master?.name || "Unknown"} —{" "}
-                      {master?.positions.join(", ")}
+                <Pressable
+                  style={styles.visitCard}
+                  onPress={() => router.push(`/procedure/${proc.id}`)}
+                >
+                  <View style={styles.visitDate}>
+                    <Calendar size={16} color={colors.accent} />
+                    <Text style={styles.visitDateText}>
+                      {format(new Date(proc.date), "MMM d, yyyy · h:mm a")}
                     </Text>
                   </View>
-                  <Text style={styles.visitServices}>
-                    {proc.services.join(", ")}
-                  </Text>
-                  <View style={styles.visitTags}>
-                    {proc.positions.map((p) => (
-                      <PositionBadge key={p} position={p} small />
-                    ))}
+                  <View style={styles.visitBody}>
+                    <View style={styles.visitRow}>
+                      <User size={14} color={colors.textSecondary} />
+                      <Text style={styles.visitMaster}>
+                        {master?.name || "Unknown"} —{" "}
+                        {master?.positions.join(", ")}
+                      </Text>
+                    </View>
+                    <Text style={styles.visitServices}>
+                      {proc.services.join(", ")}
+                    </Text>
+                    <View style={styles.visitTags}>
+                      {proc.positions.map((p) => (
+                        <PositionBadge key={p} position={p} small />
+                      ))}
+                    </View>
                   </View>
-                </View>
-                {proc.notes && (
-                  <Text style={styles.visitNotes} numberOfLines={2}>
-                    {proc.notes}
-                  </Text>
-                )}
-              </Pressable>
+                  {proc.notes && (
+                    <Text style={styles.visitNotes} numberOfLines={2}>
+                      {proc.notes}
+                    </Text>
+                  )}
+                </Pressable>
+              </Animated.View>
             );
           })
         )}
@@ -208,14 +238,16 @@ export default function ClientDetailScreen() {
             }}
           >
             <Text style={styles.seeAllText}>
-              See All {procedures.length} Visits →
+              {t("clientDetail.procedures")} ({procedures.length}) →
             </Text>
           </Pressable>
         )}
 
         <Pressable style={styles.deleteRow} onPress={handleDelete}>
           <Trash2 size={18} color={colors.danger} />
-          <Text style={styles.deleteRowText}>Delete Client</Text>
+          <Text style={styles.deleteRowText}>
+            {t("clientDetail.deleteClient")}
+          </Text>
         </Pressable>
 
         <View style={{ height: 40 }} />

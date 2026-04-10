@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { PaletteKey } from "../constants/theme";
+import type { LanguageCode } from "../i18n";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type AppIconVariant = "default" | "dark" | "gold" | "minimal";
@@ -32,6 +33,10 @@ interface SettingsState {
   // App Icon
   appIcon: AppIconVariant;
   setAppIcon: (icon: AppIconVariant) => void;
+
+  // Language
+  language: LanguageCode;
+  setLanguage: (lang: LanguageCode) => void;
 
   // Working hours
   workingHours: WorkingHours[];
@@ -68,12 +73,14 @@ export const useSettingsStore = create<SettingsState>()(
       themeMode: "light",
       palette: "cream",
       appIcon: "default",
+      language: "en" as LanguageCode,
       workingHours: DEFAULT_WORKING_HOURS,
       notifications: DEFAULT_NOTIFICATIONS,
 
       setThemeMode: (themeMode) => set({ themeMode }),
       setPalette: (palette) => set({ palette }),
       setAppIcon: (appIcon) => set({ appIcon }),
+      setLanguage: (language) => set({ language }),
       setWorkingHours: (workingHours) => set({ workingHours }),
       updateDayHours: (day, data) =>
         set((s) => ({

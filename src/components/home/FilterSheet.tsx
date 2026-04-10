@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   View,
@@ -37,6 +38,7 @@ export function FilterSheet({ visible, onClose }: Props) {
   const colors = useColors();
   const s = styles(colors);
   const { bottom } = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const masters = useAppStore((s) => s.masters);
   const procedureFilters = useAppStore((s) => s.procedureFilters);
@@ -53,6 +55,14 @@ export function FilterSheet({ visible, onClose }: Props) {
 
   if (!visible) return null;
 
+  const onClearData = () => {
+    setProcedureFilters({});
+    setHomeSearch("");
+    setShowFromPicker(false);
+    setShowToPicker(false);
+    setFilterSheetOpen(false);
+  };
+
   return (
     <AppSheet snapPoints={["70%"]} index={0} portal onClose={onClose}>
       <BottomSheetScrollView
@@ -63,14 +73,14 @@ export function FilterSheet({ visible, onClose }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={s.header}>
-          <Text style={s.title}>Filters</Text>
+          <Text style={s.title}>{t("filterSheet.title")}</Text>
           <Pressable onPress={onClose}>
             <X size={20} color={colors.textPrimary} />
           </Pressable>
         </View>
 
         {/* Master filter */}
-        <Text style={s.label}>Master</Text>
+        <Text style={s.label}>{t("filterSheet.master")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -78,7 +88,7 @@ export function FilterSheet({ visible, onClose }: Props) {
         >
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Chip
-              label="All"
+              label={t("common.all")}
               active={!filterMasterId}
               onPress={() =>
                 setProcedureFilters({
@@ -104,7 +114,7 @@ export function FilterSheet({ visible, onClose }: Props) {
         </ScrollView>
 
         {/* Position filter */}
-        <Text style={s.label}>Type</Text>
+        <Text style={s.label}>{t("filterSheet.positions")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -112,7 +122,7 @@ export function FilterSheet({ visible, onClose }: Props) {
         >
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Chip
-              label="All"
+              label={t("common.all")}
               active={!procedureFilters.position}
               onPress={() =>
                 setProcedureFilters({
@@ -139,7 +149,9 @@ export function FilterSheet({ visible, onClose }: Props) {
         </ScrollView>
 
         {/* Date range */}
-        <Text style={s.label}>Date Range</Text>
+        <Text style={s.label}>
+          {t("filterSheet.dateRange") ?? "Date Range"}
+        </Text>
         <View style={s.dateRow}>
           <Pressable
             style={s.dateBtn}
@@ -154,7 +166,7 @@ export function FilterSheet({ visible, onClose }: Props) {
             >
               {filterDateFrom
                 ? format(new Date(filterDateFrom), "MMM d, yyyy")
-                : "From"}
+                : t("filterSheet.dateFrom")}
             </Text>
             {filterDateFrom && (
               <Pressable
@@ -184,7 +196,7 @@ export function FilterSheet({ visible, onClose }: Props) {
             <Text style={[s.dateBtnText, filterDateTo && s.dateBtnTextActive]}>
               {filterDateTo
                 ? format(new Date(filterDateTo), "MMM d, yyyy")
-                : "To"}
+                : t("filterSheet.dateTo")}
             </Text>
             {filterDateTo && (
               <Pressable
@@ -208,7 +220,7 @@ export function FilterSheet({ visible, onClose }: Props) {
             display={Platform.OS === "ios" ? "inline" : "default"}
             value={filterDateFrom ? new Date(filterDateFrom) : new Date()}
             maximumDate={filterDateTo ? new Date(filterDateTo) : undefined}
-            onChange={(_, date) => {
+            onValueChange={(_, date) => {
               if (Platform.OS === "android") setShowFromPicker(false);
               if (date)
                 setProcedureFilters({
@@ -225,7 +237,7 @@ export function FilterSheet({ visible, onClose }: Props) {
             display={Platform.OS === "ios" ? "inline" : "default"}
             value={filterDateTo ? new Date(filterDateTo) : new Date()}
             minimumDate={filterDateFrom ? new Date(filterDateFrom) : undefined}
-            onChange={(_, date) => {
+            onValueChange={(_, date) => {
               if (Platform.OS === "android") setShowToPicker(false);
               if (date)
                 setProcedureFilters({
@@ -239,15 +251,9 @@ export function FilterSheet({ visible, onClose }: Props) {
 
         <Pressable
           style={[s.clearBtn, { marginTop: 16 }]}
-          onPress={() => {
-            setProcedureFilters({});
-            setHomeSearch("");
-            setShowFromPicker(false);
-            setShowToPicker(false);
-            setFilterSheetOpen(false);
-          }}
+          onPress={onClearData}
         >
-          <Text style={s.clearBtnText}>Clear All Filters</Text>
+          <Text style={s.clearBtnText}>{t("filterSheet.clearAll")}</Text>
         </Pressable>
       </BottomSheetScrollView>
     </AppSheet>

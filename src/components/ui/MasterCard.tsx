@@ -2,9 +2,16 @@ import { memo, useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { MapPin, Users, ChevronRight } from "lucide-react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { FontSize, BorderRadius } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 import { PositionBadge } from "./PositionBadge";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 import type { Master } from "../../types";
 
 interface Props {
@@ -20,6 +27,10 @@ export const MasterCard = memo(function MasterCard({
 }: Props) {
   const colors = useColors();
   const s = useMemo(() => styles(colors), [colors]);
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const initials = useMemo(
     () =>
@@ -38,7 +49,16 @@ export const MasterCard = memo(function MasterCard({
   );
 
   return (
-    <Pressable style={s.card} onPress={onPress}>
+    <AnimatedPressable
+      style={[s.card, animStyle]}
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withSpring(0.97, { damping: 15 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15 });
+      }}
+    >
       <View style={s.avatarWrap}>
         {master.avatar ? (
           <Image
@@ -82,7 +102,7 @@ export const MasterCard = memo(function MasterCard({
           <Text style={s.metaText}>{master.clientsServed} clients served</Text>
         </View>
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 });
 

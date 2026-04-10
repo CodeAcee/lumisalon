@@ -3,6 +3,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
 } from "react-native";
 import Animated, {
@@ -62,6 +63,10 @@ export function Button({
         style,
       ]}
     >
+      {/* Glossy shimmer for primary variant */}
+      {variant === "primary" && (
+        <View style={styles.primaryShimmer} pointerEvents="none" />
+      )}
       {loading ? (
         <ActivityIndicator
           size="small"
@@ -96,6 +101,24 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     primary: {
       backgroundColor: c.accent,
+      overflow: "hidden",
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 14,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.25)",
+    },
+    primaryShimmer: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: "50%",
+      backgroundColor: "rgba(255,255,255,0.16)",
+      borderTopLeftRadius: BorderRadius.lg,
+      borderTopRightRadius: BorderRadius.lg,
     },
     outline: {
       backgroundColor: c.white,

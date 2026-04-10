@@ -6,7 +6,9 @@ import {
   Dimensions,
   ScrollView,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Sun, Moon, Smartphone, Check } from "lucide-react-native";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
@@ -162,6 +164,7 @@ export default function AppearanceScreen() {
   const setPalette = useSettingsStore((s) => s.setPalette);
   const { colors } = useTheme();
   const styles = makeStyles(colors);
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -170,7 +173,7 @@ export default function AppearanceScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Appearance</Text>
+        <Text style={styles.headerTitle}>{t("appearance.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -179,8 +182,11 @@ export default function AppearanceScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Palette section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>PALETTE</Text>
+        <Animated.View
+          entering={FadeInDown.duration(350)}
+          style={styles.section}
+        >
+          <Text style={styles.sectionLabel}>{t("appearance.palette")}</Text>
           <View style={styles.palettesGrid}>
             <View style={styles.paletteRow}>
               {PALETTE_DEFS.slice(0, 2).map((def) => (
@@ -210,11 +216,14 @@ export default function AppearanceScreen() {
               />
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Theme mode section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>MODE</Text>
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(350)}
+          style={styles.section}
+        >
+          <Text style={styles.sectionLabel}>{t("appearance.mode")}</Text>
           <View style={styles.modeRow}>
             {THEME_MODES.map(({ mode, label, Icon }) => {
               const isActive = themeMode === mode;
@@ -236,16 +245,14 @@ export default function AppearanceScreen() {
                       isActive && styles.modePillTextActive,
                     ]}
                   >
-                    {label}
+                    {t(`appearance.${mode}`)}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.hint}>
-            Choose "System" to automatically match your device appearance.
-          </Text>
-        </View>
+          <Text style={styles.hint}>{t("appearance.systemHint")}</Text>
+        </Animated.View>
 
         <View style={{ height: 40 }} />
       </ScrollView>

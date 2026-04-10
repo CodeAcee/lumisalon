@@ -6,6 +6,9 @@ import {
   TextInput,
   Keyboard,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,10 +17,12 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Avatar } from "../../src/components/ui/Avatar";
 import { Button } from "../../src/components/ui/Button";
+import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { useAuthStore } from "../../src/store";
 import {
   editProfileSchema,
@@ -37,6 +42,7 @@ export default function EditProfileScreen() {
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
   const { user, updateProfile, isLoading, setLoading } = useAuthStore();
+  const { t } = useTranslation();
 
   const {
     control,
@@ -95,121 +101,134 @@ export default function EditProfileScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>{t("profileEdit.title")}</Text>
         <View style={{ width: 64 }} />
       </View>
 
       <View style={styles.divider} />
 
-      <View style={styles.content}>
-        {/* Photo section */}
-        <Pressable style={styles.photoSection} onPress={pickAvatar}>
-          <View style={styles.avatarWrapper}>
-            {user?.avatar ? (
-              <Image
-                source={{ uri: user.avatar }}
-                style={{ width: 96, height: 96, borderRadius: 48 }}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <Avatar
-                name={currentName || "User"}
-                size={96}
-                color={colors.accent}
-              />
-            )}
-            <View style={styles.cameraBadge}>
-              <Camera size={14} color={colors.white} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Photo section */}
+          <Pressable style={styles.photoSection} onPress={pickAvatar}>
+            <View style={styles.avatarWrapper}>
+              {user?.avatar ? (
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={{ width: 96, height: 96, borderRadius: 48 }}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <Avatar
+                  name={currentName || "User"}
+                  size={96}
+                  color={colors.accent}
+                />
+              )}
+              <View style={styles.cameraBadge}>
+                <Camera size={14} color={colors.white} />
+              </View>
             </View>
+            <Text style={styles.changePhoto}>
+              {t("profileEdit.changePhoto")}
+            </Text>
+          </Pressable>
+
+          {/* Form card */}
+          <View style={styles.formCard}>
+            {/* Name - required */}
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>
+                    {t("profileEdit.fullName")}{" "}
+                    <Text style={styles.requiredStar}>*</Text>
+                  </Text>
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    style={styles.fieldInput}
+                    placeholderTextColor={colors.textTertiary}
+                  />
+                </View>
+              )}
+            />
+            {errors.name && (
+              <Text style={styles.errorText}>{errors.name.message}</Text>
+            )}
+
+            <View style={styles.fieldDivider} />
+
+            {/* Email - required */}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>
+                    {t("profileEdit.email")}{" "}
+                    <Text style={styles.requiredStar}>*</Text>
+                  </Text>
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    style={styles.fieldInput}
+                    placeholderTextColor={colors.textTertiary}
+                  />
+                </View>
+              )}
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
+            )}
           </View>
-          <Text style={styles.changePhoto}>Change Photo</Text>
-        </Pressable>
 
-        {/* Form card */}
-        <View style={styles.formCard}>
-          {/* Name - required */}
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>
-                  Full Name <Text style={styles.requiredStar}>*</Text>
-                </Text>
-                <TextInput
-                  value={value}
-                  onChangeText={onChange}
+          {/* Phone */}
+          <View style={styles.phoneSection}>
+            <Text style={styles.phoneSectionLabel}>
+              {t("profileEdit.phone").toUpperCase()}
+            </Text>
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, onBlur } }) => (
+                <PhoneInput
+                  value={phoneValue || ""}
+                  onChange={onChange}
                   onBlur={onBlur}
-                  style={styles.fieldInput}
-                  placeholderTextColor={colors.textTertiary}
+                  hasError={!!errors.phone}
                 />
-              </View>
+              )}
+            />
+            {errors.phone && (
+              <Text style={styles.errorText}>{errors.phone.message}</Text>
             )}
+          </View>
+        </ScrollView>
+
+        {/* Bottom button */}
+        <BottomActionBar paddingBottom={insets.bottom + 16}>
+          <Button
+            title={t("common.save")}
+            onPress={handleSubmit(onSubmit)}
+            loading={isLoading}
+            icon={<Check size={18} color={colors.textOnAccent} />}
           />
-          {errors.name && (
-            <Text style={styles.errorText}>{errors.name.message}</Text>
-          )}
-
-          <View style={styles.fieldDivider} />
-
-          {/* Email - required */}
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>
-                  Email <Text style={styles.requiredStar}>*</Text>
-                </Text>
-                <TextInput
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  style={styles.fieldInput}
-                  placeholderTextColor={colors.textTertiary}
-                />
-              </View>
-            )}
-          />
-          {errors.email && (
-            <Text style={styles.errorText}>{errors.email.message}</Text>
-          )}
-
-        </View>
-
-        {/* Phone */}
-        <View style={styles.phoneSection}>
-          <Text style={styles.phoneSectionLabel}>PHONE</Text>
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, onBlur } }) => (
-              <PhoneInput
-                value={phoneValue || ""}
-                onChange={onChange}
-                onBlur={onBlur}
-                hasError={!!errors.phone}
-              />
-            )}
-          />
-          {errors.phone && (
-            <Text style={styles.errorText}>{errors.phone.message}</Text>
-          )}
-        </View>
-      </View>
-
-      {/* Bottom button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <Button
-          title="Save Changes"
-          onPress={handleSubmit(onSubmit)}
-          loading={isLoading}
-          icon={<Check size={18} color={colors.textOnAccent} />}
-        />
-      </View>
+        </BottomActionBar>
+      </KeyboardAvoidingView>
     </Pressable>
   );
 }
@@ -242,10 +261,10 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.border,
     },
     content: {
-      flex: 1,
       paddingHorizontal: 16,
       paddingTop: 32,
       gap: 24,
+      paddingBottom: 24,
     },
     photoSection: {
       alignItems: "center",

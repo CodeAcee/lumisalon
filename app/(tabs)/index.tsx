@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   FadeInDown,
   ZoomIn,
@@ -17,8 +18,8 @@ import Animated, {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   User,
@@ -30,8 +31,9 @@ import {
   MapPin,
   ChevronDown,
 } from "lucide-react-native";
+import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
-import { useColors } from "../../src/theme/ThemeContext";
+import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { ProcedureCard } from "../../src/components/home/ProcedureCard";
 import { FilterSheet } from "../../src/components/home/FilterSheet";
 import { ProcedureSkeleton } from "../../src/components/ui/SkeletonCard";
@@ -39,27 +41,67 @@ import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { useAppStore, useAuthStore } from "../../src/store";
 import { format } from "date-fns";
 
+const isGlassAvailable = isGlassEffectAPIAvailable();
+
 function FAB({ onPress, style }: { onPress: () => void; style?: object }) {
   const colors = useColors();
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  return (
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const inner = (
     <AnimatedPressable
       entering={ZoomIn.delay(300).duration(400)}
       onPress={onPress}
-      onPressIn={() => { scale.value = withSpring(0.9, { damping: 12 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
-      style={[style, animStyle]}
+      onPressIn={() => {
+        scale.value = withSpring(0.9, { damping: 12 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 12 });
+      }}
+      style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
     >
-      <Plus size={24} color={colors.textOnAccent} />
+      {isGlassAvailable ? (
+        <GlassView
+          style={styles.fabGlassInner}
+          glassEffectStyle="clear"
+          isInteractive
+        >
+          <Plus size={24} color="#fff" />
+        </GlassView>
+      ) : (
+        <Plus size={24} color={colors.textOnAccent} />
+      )}
     </AnimatedPressable>
   );
+
+  return inner;
 }
 
+const styles = StyleSheet.create({
+  fabGlass: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  fabGlassInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+
 export default function HomeScreen() {
-  const colors = useColors();
-  const s = makeStyles(colors);
+  const { colors, isDark } = useTheme();
+  const s = makeStyles(colors, isDark);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  // NativeTabs handles its own safe area; position FAB above the native tab bar
+  const fabBottom = insets.bottom + 70;
   const user = useAuthStore((state) => state.user);
 
   const procedures = useAppStore((state) => state.procedures);
@@ -72,7 +114,9 @@ export default function HomeScreen() {
   const procedureFilters = useAppStore((state) => state.procedureFilters);
   const filterSheetOpen = useAppStore((state) => state.filterSheetOpen);
   const setFilterSheetOpen = useAppStore((state) => state.setFilterSheetOpen);
-  const getFilteredProcedures = useAppStore((state) => state.getFilteredProcedures);
+  const getFilteredProcedures = useAppStore(
+    (state) => state.getFilteredProcedures,
+  );
   const getClientById = useAppStore((state) => state.getClientById);
   const getMasterById = useAppStore((state) => state.getMasterById);
 
@@ -94,7 +138,8 @@ export default function HomeScreen() {
   const mastersCount = useMemo(
     () =>
       activeLocationId
-        ? masters.filter((m) => m.locationIds?.includes(activeLocationId)).length
+        ? masters.filter((m) => m.locationIds?.includes(activeLocationId))
+            .length
         : masters.length,
     [masters, activeLocationId],
   );
@@ -119,7 +164,7 @@ export default function HomeScreen() {
         >
           <MapPin size={14} color={colors.accent} />
           <Text style={s.locationBtnText} numberOfLines={1}>
-            {activeLocation ? activeLocation.name : "All Locations"}
+            {activeLocation ? activeLocation.name : t("home.allLocations")}
           </Text>
           <ChevronDown size={14} color={colors.textSecondary} />
         </Pressable>
@@ -146,7 +191,7 @@ export default function HomeScreen() {
           <TextInput
             value={homeSearch}
             onChangeText={setHomeSearch}
-            placeholder="Search procedures..."
+            placeholder={t("home.searchPlaceholder")}
             placeholderTextColor={colors.textTertiary}
             style={s.searchInput}
             returnKeyType="search"
@@ -171,23 +216,28 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Stats */}
         <View style={s.statsRow}>
-          <Animated.View entering={FadeInDown.delay(50).duration(400)} style={s.statCard}>
+          <Animated.View
+            entering={FadeInDown.delay(50).duration(400)}
+            style={s.statCard}
+          >
             <Calendar size={18} color={colors.accent} />
             <Text style={s.statValue}>{todayCount}</Text>
-            <Text style={s.statLabel}>Today</Text>
+            <Text style={s.statLabel}>{t("home.today")}</Text>
           </Animated.View>
-          <Animated.View entering={FadeInDown.delay(150).duration(400)} style={s.statCard}>
+          <Animated.View
+            entering={FadeInDown.delay(150).duration(400)}
+            style={s.statCard}
+          >
             <Users size={18} color={colors.accent} />
             <Text style={s.statValue}>{mastersCount}</Text>
-            <Text style={s.statLabel}>Masters</Text>
+            <Text style={s.statLabel}>{t("tabs.masters")}</Text>
           </Animated.View>
         </View>
 
         {/* Recent procedures */}
         <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Recent Procedures</Text>
+          <Text style={s.sectionTitle}>{t("home.recentProcedures")}</Text>
         </View>
 
         {procedures.length === 0 && !homeSearch ? (
@@ -197,7 +247,7 @@ export default function HomeScreen() {
           </>
         ) : recentProcedures.length === 0 ? (
           <View style={s.emptyCard}>
-            <Text style={s.emptyText}>No procedures found</Text>
+            <Text style={s.emptyText}>{t("home.noProcedures")}</Text>
           </View>
         ) : (
           recentProcedures.map((proc) => {
@@ -215,11 +265,19 @@ export default function HomeScreen() {
           })
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: insets.bottom + 90 }} />
       </ScrollView>
 
       {/* FAB */}
-      <FAB onPress={() => router.push("/procedure/create")} style={[s.fab, { bottom: 100 }]} />
+      <FAB
+        onPress={() =>
+          router.push({
+            pathname: "/procedure/create",
+            params: { locationId: activeLocationId ?? "" },
+          })
+        }
+        style={[s.fab, { bottom: fabBottom }]}
+      />
 
       <LocationSheet
         visible={locationSheetOpen}
@@ -228,7 +286,7 @@ export default function HomeScreen() {
         onSelect={setActiveLocationId}
         showAll
         portal
-        title="Filter by Location"
+        title={t("home.filterByLocation")}
       />
 
       <FilterSheet
@@ -239,7 +297,7 @@ export default function HomeScreen() {
   );
 }
 
-function makeStyles(c: ReturnType<typeof useColors>) {
+function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bgPrimary },
 
@@ -285,11 +343,18 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgSearch,
-      borderRadius: BorderRadius.md,
-      height: 46,
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.xl,
+      height: 48,
       paddingHorizontal: 16,
       gap: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.75)",
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 2,
     },
     searchInput: {
       flex: 1,
@@ -322,8 +387,14 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       padding: 16,
       alignItems: "center",
       gap: 6,
+      overflow: "hidden",
       borderWidth: 1,
-      borderColor: c.border,
+      borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(255,255,255,0.8)",
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.13,
+      shadowRadius: 18,
+      elevation: 4,
     },
     statValue: {
       fontSize: FontSize.title,
@@ -357,17 +428,19 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     fab: {
       position: "absolute",
       right: 20,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
+      width: 58,
+      height: 58,
+      borderRadius: 29,
       backgroundColor: c.bgFab,
       alignItems: "center",
       justifyContent: "center",
       shadowColor: c.accent,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 6,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.45,
+      shadowRadius: 20,
+      elevation: 8,
+      borderWidth: 1.5,
+      borderColor: "rgba(255,255,255,0.55)",
     },
   });
 }

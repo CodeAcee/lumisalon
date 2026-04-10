@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Bell,
@@ -62,6 +64,7 @@ export default function NotificationsScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const notifications = useSettingsStore((s) => s.notifications);
   const toggleNotification = useSettingsStore((s) => s.toggleNotification);
   const workingHours = useSettingsStore((s) => s.workingHours);
@@ -72,9 +75,13 @@ export default function NotificationsScreen() {
     // Recalculate enabled state after toggle
     const current = useSettingsStore.getState().notifications;
     const allow =
-      key === "allowNotifications" ? !current.allowNotifications : current.allowNotifications;
+      key === "allowNotifications"
+        ? !current.allowNotifications
+        : current.allowNotifications;
     const appt =
-      key === "appointmentReminders" ? !current.appointmentReminders : current.appointmentReminders;
+      key === "appointmentReminders"
+        ? !current.appointmentReminders
+        : current.appointmentReminders;
     await scheduleWorkingHourNotifications(workingHours, allow && appt);
   };
 
@@ -92,33 +99,41 @@ export default function NotificationsScreen() {
         >
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Main toggle card */}
-        <View style={styles.card}>
+        <Animated.View entering={FadeInDown.duration(350)} style={styles.card}>
           <View style={styles.row}>
             <View style={[styles.iconBox, { backgroundColor: colors.accent }]}>
               <Bell size={20} color={colors.textOnAccent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.rowLabel}>Allow Notifications</Text>
-              <Text style={styles.rowDesc}>
-                Master toggle for all notifications
+              <Text style={styles.rowLabel}>
+                {t("notifications.allowNotifications")}
               </Text>
+              <Text style={styles.rowDesc}>{t("notifications.allowDesc")}</Text>
             </View>
             <AppSwitch
               value={notifications.allowNotifications}
               onChange={() => handleToggle("allowNotifications")}
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Individual notification preferences */}
-        <Text style={styles.sectionLabel}>NOTIFICATION TYPES</Text>
-        <View style={[styles.card, !mainEnabled && styles.cardDisabled]}>
+        <Animated.Text
+          entering={FadeInDown.delay(80).duration(350)}
+          style={styles.sectionLabel}
+        >
+          {t("notifications.typesSection")}
+        </Animated.Text>
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(350)}
+          style={[styles.card, !mainEnabled && styles.cardDisabled]}
+        >
           {NOTIFICATION_ITEMS.slice(1).map((item, i) => {
             const Icon = item.icon;
             return (
@@ -129,8 +144,16 @@ export default function NotificationsScreen() {
                     <Icon size={20} color={colors.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowLabel}>{item.label}</Text>
-                    <Text style={styles.rowDesc}>{item.description}</Text>
+                    <Text style={styles.rowLabel}>
+                      {t(
+                        `notifications.${item.key === "appointmentReminders" ? "appointmentReminders" : item.key === "newClientAlerts" ? "newClientAlerts" : item.key === "dailySummary" ? "dailySummary" : "marketingUpdates"}`,
+                      )}
+                    </Text>
+                    <Text style={styles.rowDesc}>
+                      {t(
+                        `notifications.${item.key === "appointmentReminders" ? "appointmentDesc" : item.key === "newClientAlerts" ? "newClientDesc" : item.key === "dailySummary" ? "dailyDesc" : "marketingDesc"}`,
+                      )}
+                    </Text>
                   </View>
                   <AppSwitch
                     value={notifications[item.key]}
@@ -141,11 +164,9 @@ export default function NotificationsScreen() {
               </View>
             );
           })}
-        </View>
+        </Animated.View>
 
-        <Text style={styles.hint}>
-          Notification preferences are synced with your account.
-        </Text>
+        <Text style={styles.hint}>{t("notifications.syncHint")}</Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>

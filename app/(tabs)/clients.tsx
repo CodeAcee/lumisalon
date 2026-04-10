@@ -7,25 +7,33 @@ import {
   TextInput,
   Keyboard,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, Plus, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { FlashList } from "@shopify/flash-list";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
-import { useColors } from "../../src/theme/ThemeContext";
+import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { ClientCard } from "../../src/components/ui/ClientCard";
 import { ListSkeleton } from "../../src/components/ui/SkeletonCard";
 import { useAppStore } from "../../src/store";
 import type { Client } from "../../src/types";
+import { isGlassEffectAPIAvailable } from "expo-glass-effect/build/isGlassEffectAPIAvailable";
+import { GlassView } from "expo-glass-effect";
 
 // Stable separator — defined outside component so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
 const SEPARATOR_STYLE = { height: 10 };
 
+const isGlassAvailable = isGlassEffectAPIAvailable();
+
 export default function ClientsScreen() {
   const colors = useColors();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
   const clientSearch = useAppStore((state) => state.clientSearch);
   const setClientSearch = useAppStore((state) => state.setClientSearch);
   const getFilteredClients = useAppStore((state) => state.getFilteredClients);
@@ -39,10 +47,10 @@ export default function ClientsScreen() {
   const ListEmpty = useMemo(
     () => (
       <View style={s.emptyCard}>
-        <Text style={s.emptyText}>No clients found</Text>
+        <Text style={s.emptyText}>{t("clients.noClients")}</Text>
       </View>
     ),
-    [s],
+    [s, t],
   );
 
   const renderClient = useCallback(
@@ -68,22 +76,39 @@ export default function ClientsScreen() {
       style={[s.container, { paddingTop: insets.top }]}
       onPress={Keyboard.dismiss}
     >
-      <View style={s.header}>
-        <Text style={s.title}>Clients</Text>
+      <Animated.View
+        entering={FadeInDown.delay(0).duration(400)}
+        style={s.header}
+      >
+        <Text style={s.title}>{t("clients.title")}</Text>
         <Pressable
           onPress={() => router.push("/client/create")}
           style={[s.iconBtn, s.plusBtn]}
         >
-          <Plus size={20} color={colors.textOnAccent} />
+          {isGlassAvailable ? (
+            <GlassView
+              style={s.iconBtn}
+              glassEffectStyle="clear"
+              colorScheme={isDark ? "light" : "dark"}
+              isInteractive
+            >
+              <Plus size={24} color={isDark ? "#fff" : "#000"} />
+            </GlassView>
+          ) : (
+            <Plus size={20} color={colors.textOnAccent} />
+          )}
         </Pressable>
-      </View>
+      </Animated.View>
 
-      <View style={s.searchContainer}>
+      <Animated.View
+        entering={FadeInDown.delay(60).duration(400)}
+        style={s.searchContainer}
+      >
         <Search size={18} color={colors.textTertiary} />
         <TextInput
           value={clientSearch}
           onChangeText={setClientSearch}
-          placeholder="Search clients..."
+          placeholder={t("clients.searchPlaceholder")}
           placeholderTextColor={colors.textTertiary}
           style={s.searchInput}
           returnKeyType="search"
@@ -93,7 +118,7 @@ export default function ClientsScreen() {
             <X size={16} color={colors.textTertiary} />
           </Pressable>
         )}
-      </View>
+      </Animated.View>
 
       {isInitialLoad ? (
         <View style={s.skeletonWrap}>

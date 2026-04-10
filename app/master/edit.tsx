@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -32,6 +33,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
+import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { Chip } from "../../src/components/ui/Chip";
 import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { PhoneInput } from "../../src/components/ui/PhoneInput";
@@ -79,6 +81,7 @@ export default function EditMasterScreen() {
   const [addPositionSheetOpen, setAddPositionSheetOpen] = useState(false);
   const [customPositionText, setCustomPositionText] = useState("");
   const [editingPosition, setEditingPosition] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const {
     control,
@@ -171,7 +174,8 @@ export default function EditMasterScreen() {
     ]);
   };
 
-  const isCustomPosition = (pos: string) => !POSITIONS.includes(pos as Position);
+  const isCustomPosition = (pos: string) =>
+    !POSITIONS.includes(pos as Position);
 
   const handlePositionPress = (pos: string) => {
     const current = selectedPositions || [];
@@ -209,7 +213,10 @@ export default function EditMasterScreen() {
   const addOwnPosition = () => {
     const current = selectedPositions || [];
     if (current.length >= 3) {
-      Alert.alert("Limit reached", "A master can have no more than 3 positions.");
+      Alert.alert(
+        "Limit reached",
+        "A master can have no more than 3 positions.",
+      );
       return;
     }
     setEditingPosition(null);
@@ -297,152 +304,183 @@ export default function EditMasterScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Edit Master</Text>
+        <Text style={styles.headerTitle}>{t("masterForm.editTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.divider} />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Avatar picker */}
-        <View style={styles.avatarSection}>
-          <Pressable onPress={showAvatarOptions} style={styles.avatarWrap}>
-            {avatarUri ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.avatarImg}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Avatar picker */}
+          <View style={styles.avatarSection}>
+            <Pressable onPress={showAvatarOptions} style={styles.avatarWrap}>
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
+              )}
+
+              {/* Camera badge */}
+              <View style={styles.cameraBadge}>
+                <Camera size={14} color="#fff" />
               </View>
+
+              {uploading && (
+                <View style={styles.avatarOverlay}>
+                  <ActivityIndicator color="#fff" />
+                </View>
+              )}
+            </Pressable>
+            <Text style={styles.avatarHint}>Tap to change photo</Text>
+          </View>
+
+          {/* Name */}
+          <Text style={styles.sectionLabel}>
+            {t("masterForm.fullName").toUpperCase()}
+          </Text>
+          <View style={styles.formCard}>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <User size={18} color={colors.textTertiary} />
+                  <TextInput
+                    placeholder={t("masterForm.fullName") + " *"}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholderTextColor={colors.textTertiary}
+                    style={styles.input}
+                  />
+                </View>
+              )}
+            />
+            {errors.name && (
+              <Text style={styles.errorText}>{errors.name.message}</Text>
             )}
+          </View>
 
-            {/* Camera badge */}
-            <View style={styles.cameraBadge}>
-              <Camera size={14} color="#fff" />
-            </View>
-
-            {uploading && (
-              <View style={styles.avatarOverlay}>
-                <ActivityIndicator color="#fff" />
-              </View>
-            )}
-          </Pressable>
-          <Text style={styles.avatarHint}>Tap to change photo</Text>
-        </View>
-
-        {/* Name */}
-        <Text style={styles.sectionLabel}>INFO</Text>
-        <View style={styles.formCard}>
+          {/* Phone */}
+          <Text style={styles.sectionLabel}>
+            {t("masterForm.phone").toUpperCase()}
+          </Text>
           <Controller
             control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <User size={18} color={colors.textTertiary} />
-                <TextInput
-                  placeholder="Full Name *"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholderTextColor={colors.textTertiary}
-                  style={styles.input}
-                />
-              </View>
+            name="phone"
+            render={({ field: { onChange, onBlur } }) => (
+              <PhoneInput
+                value={phoneValue || ""}
+                onChange={onChange}
+                onBlur={onBlur}
+              />
             )}
           />
-          {errors.name && (
-            <Text style={styles.errorText}>{errors.name.message}</Text>
-          )}
-        </View>
 
-        {/* Phone */}
-        <Text style={styles.sectionLabel}>PHONE</Text>
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field: { onChange, onBlur } }) => (
-            <PhoneInput
-              value={phoneValue || ""}
-              onChange={onChange}
-              onBlur={onBlur}
-            />
-          )}
-        />
-
-        {/* Locations */}
-        <Text style={styles.sectionLabel}>LOCATIONS</Text>
-        <View style={[styles.formCard, locationError && styles.formCardError]}>
-          <Pressable
-            style={styles.field}
-            onPress={() => setLocationSheetOpen(true)}
+          {/* Locations */}
+          <Text style={styles.sectionLabel}>
+            {t("masterForm.locations").toUpperCase()}
+          </Text>
+          <View
+            style={[styles.formCard, locationError && styles.formCardError]}
           >
-            <MapPin size={18} color={locationError ? colors.danger : colors.textTertiary} />
-            <Text style={[styles.fieldLabel, { flex: 1 }, selectedLocationIds.length > 0 && { color: colors.textPrimary }]}>
-              {selectedLocationIds.length > 0
-                ? locations
-                    .filter((l) => selectedLocationIds.includes(l.id))
-                    .map((l) => l.name)
-                    .join(", ")
-                : "Assign to Salon *"}
-            </Text>
-          </Pressable>
-        </View>
-        {locationError && (
-          <Text style={styles.errorText}>Please assign at least one salon</Text>
-        )}
-
-        {/* Positions */}
-        <Text style={styles.sectionLabel}>POSITIONS</Text>
-        <View style={styles.formCard}>
-          <View style={styles.field}>
-            <Briefcase size={18} color={colors.textTertiary} />
-            <Text style={styles.fieldLabel}>Select Position *</Text>
-          </View>
-          <View style={styles.positionsWrap}>
-            {[...POSITIONS, ...(selectedPositions || []).filter(
-              (p) => !POSITIONS.includes(p as Position),
-            )].map((pos) => (
-              <Chip
-                key={pos}
-                label={pos}
-                active={selectedPositions?.includes(pos)}
-                onPress={() => handlePositionPress(pos)}
+            <Pressable
+              style={styles.field}
+              onPress={() => setLocationSheetOpen(true)}
+            >
+              <MapPin
+                size={18}
+                color={locationError ? colors.danger : colors.textTertiary}
               />
-            ))}
-            <Pressable style={styles.addOwnBtn} onPress={addOwnPosition}>
-              <Plus size={14} color={colors.accent} />
-              <Text style={styles.addOwnText}>Add own</Text>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  { flex: 1 },
+                  selectedLocationIds.length > 0 && {
+                    color: colors.textPrimary,
+                  },
+                ]}
+              >
+                {selectedLocationIds.length > 0
+                  ? locations
+                      .filter((l) => selectedLocationIds.includes(l.id))
+                      .map((l) => l.name)
+                      .join(", ")
+                  : t("masterForm.locations")}
+              </Text>
             </Pressable>
           </View>
-          {errors.positions && (
-            <Text
-              style={[
-                styles.errorText,
-                { paddingHorizontal: 16, paddingBottom: 12 },
-              ]}
-            >
-              {errors.positions.message}
-            </Text>
+          {locationError && (
+            <Text style={styles.errorText}>{t("masterForm.locations")}</Text>
           )}
-        </View>
-      </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <Button
-          title="Save Changes"
-          onPress={handleSubmit(onSubmit)}
-          icon={<Check size={18} color={colors.textOnAccent} />}
-        />
-      </View>
+          {/* Positions */}
+          <Text style={styles.sectionLabel}>
+            {t("masterForm.positions").toUpperCase()}
+          </Text>
+          <View style={styles.formCard}>
+            <View style={styles.field}>
+              <Briefcase size={18} color={colors.textTertiary} />
+              <Text style={styles.fieldLabel}>
+                {t("masterForm.positions")} *
+              </Text>
+            </View>
+            <View style={styles.positionsWrap}>
+              {[
+                ...POSITIONS,
+                ...(selectedPositions || []).filter(
+                  (p) => !POSITIONS.includes(p as Position),
+                ),
+              ].map((pos) => (
+                <Chip
+                  key={pos}
+                  label={pos}
+                  active={selectedPositions?.includes(pos)}
+                  onPress={() => handlePositionPress(pos)}
+                />
+              ))}
+              <Pressable style={styles.addOwnBtn} onPress={addOwnPosition}>
+                <Plus size={14} color={colors.accent} />
+                <Text style={styles.addOwnText}>{t("common.add")}</Text>
+              </Pressable>
+            </View>
+            {errors.positions && (
+              <Text
+                style={[
+                  styles.errorText,
+                  { paddingHorizontal: 16, paddingBottom: 12 },
+                ]}
+              >
+                {errors.positions.message}
+              </Text>
+            )}
+          </View>
+        </ScrollView>
+
+        <BottomActionBar paddingBottom={insets.bottom + 16}>
+          <Button
+            title={t("common.save")}
+            onPress={handleSubmit(onSubmit)}
+            icon={<Check size={18} color={colors.textOnAccent} />}
+          />
+        </BottomActionBar>
+      </KeyboardAvoidingView>
 
       <LocationSheet
         visible={locationSheetOpen}
@@ -460,7 +498,10 @@ export default function EditMasterScreen() {
         visible={addPositionSheetOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => { setAddPositionSheetOpen(false); setEditingPosition(null); }}
+        onRequestClose={() => {
+          setAddPositionSheetOpen(false);
+          setEditingPosition(null);
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -468,12 +509,15 @@ export default function EditMasterScreen() {
         >
           <Pressable
             style={StyleSheet.absoluteFill}
-            onPress={() => { setAddPositionSheetOpen(false); setEditingPosition(null); }}
+            onPress={() => {
+              setAddPositionSheetOpen(false);
+              setEditingPosition(null);
+            }}
           />
           <View style={styles.modalCard}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>
-                {editingPosition ? "Edit Position" : "New Position"}
+                {editingPosition ? t("common.edit") : t("masterForm.positions")}
               </Text>
               <Pressable onPress={() => setAddPositionSheetOpen(false)}>
                 <X size={20} color={colors.textPrimary} />
@@ -491,7 +535,9 @@ export default function EditMasterScreen() {
                 onSubmitEditing={confirmCustomPosition}
               />
               <Button
-                title={editingPosition ? "Save Changes" : "Add Position"}
+                title={
+                  editingPosition ? t("common.save") : t("masterForm.positions")
+                }
                 onPress={confirmCustomPosition}
                 icon={<Check size={18} color={colors.textOnAccent} />}
               />

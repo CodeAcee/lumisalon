@@ -6,6 +6,8 @@ import {
   TextInput,
   Keyboard,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,9 +16,11 @@ import { PhoneInput } from "../../src/components/ui/PhoneInput";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
+import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { useAppStore } from "../../src/store";
 import { clientSchema, type ClientFormData } from "../../src/lib/schemas";
@@ -27,8 +31,11 @@ export default function CreateClientScreen() {
   const addClient = useAppStore((s) => s.addClient);
   const locations = useAppStore((s) => s.locations);
   const styles = makeStyles(colors);
+  const { t } = useTranslation();
 
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null,
+  );
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
 
   const {
@@ -66,119 +73,132 @@ export default function CreateClientScreen() {
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <X size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>New Client</Text>
+        <Text style={styles.headerTitle}>{t("clientForm.newTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.divider} />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Name card */}
-        <View style={styles.formCard}>
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <User size={18} color={colors.textTertiary} />
-                <TextInput
-                  placeholder="Full Name *"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholderTextColor={colors.textTertiary}
-                  style={styles.input}
-                />
-              </View>
-            )}
-          />
-        </View>
-
-        {/* Phone */}
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field: { onChange, onBlur } }) => (
-            <PhoneInput
-              value={phoneValue || ""}
-              onChange={onChange}
-              onBlur={onBlur}
-              hasError={!!errors.phone}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Name card */}
+          <View style={styles.formCard}>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <User size={18} color={colors.textTertiary} />
+                  <TextInput
+                    placeholder={t("clientForm.fullName") + " *"}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholderTextColor={colors.textTertiary}
+                    style={styles.input}
+                  />
+                </View>
+              )}
             />
-          )}
-        />
+          </View>
 
-        {/* Email card */}
-        <View style={styles.formCard}>
+          {/* Phone */}
           <Controller
             control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View style={styles.field}>
-                <Mail size={18} color={colors.textTertiary} />
-                <TextInput
-                  placeholder="Email"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholderTextColor={colors.textTertiary}
-                  style={styles.input}
-                />
-                <Text style={styles.optionalLabel}>Optional</Text>
-              </View>
+            name="phone"
+            render={({ field: { onChange, onBlur } }) => (
+              <PhoneInput
+                value={phoneValue || ""}
+                onChange={onChange}
+                onBlur={onBlur}
+                hasError={!!errors.phone}
+              />
             )}
           />
-        </View>
 
-        {/* Location card */}
-        <View style={styles.formCard}>
-          <Pressable
-            style={styles.field}
-            onPress={() => setLocationSheetOpen(true)}
-          >
-            <MapPin size={18} color={colors.textTertiary} />
-            <Text style={[styles.input, !selectedLocationId && { color: colors.textTertiary }]}>
-              {selectedLocationId
-                ? locations.find((l) => l.id === selectedLocationId)?.name ?? "Select location"
-                : "Home Salon"}
-            </Text>
-            <Text style={styles.optionalLabel}>Optional</Text>
-          </Pressable>
-        </View>
-
-        {/* Validation errors */}
-        {(errors.name || errors.phone || errors.email) && (
-          <View style={styles.errorsBox}>
-            {errors.name && (
-              <Text style={styles.errorText}>{errors.name.message}</Text>
-            )}
-            {errors.phone && (
-              <Text style={styles.errorText}>{errors.phone.message}</Text>
-            )}
-            {errors.email && (
-              <Text style={styles.errorText}>{errors.email.message}</Text>
-            )}
+          {/* Email card */}
+          <View style={styles.formCard}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.field}>
+                  <Mail size={18} color={colors.textTertiary} />
+                  <TextInput
+                    placeholder={t("clientForm.email")}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    placeholderTextColor={colors.textTertiary}
+                    style={styles.input}
+                  />
+                  <Text style={styles.optionalLabel}>
+                    {t("common.optional")}
+                  </Text>
+                </View>
+              )}
+            />
           </View>
-        )}
 
-        <Text style={styles.hint}>
-          Phone number is the primary contact. Email is not required.
-        </Text>
-      </ScrollView>
+          {/* Location card */}
+          <View style={styles.formCard}>
+            <Pressable
+              style={styles.field}
+              onPress={() => setLocationSheetOpen(true)}
+            >
+              <MapPin size={18} color={colors.textTertiary} />
+              <Text
+                style={[
+                  styles.input,
+                  !selectedLocationId && { color: colors.textTertiary },
+                ]}
+              >
+                {selectedLocationId
+                  ? (locations.find((l) => l.id === selectedLocationId)?.name ??
+                    t("clientForm.selectLocation"))
+                  : t("clientForm.selectLocation")}
+              </Text>
+              <Text style={styles.optionalLabel}>{t("common.optional")}</Text>
+            </Pressable>
+          </View>
 
-      {/* Bottom button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <Button
-          title="Save Client"
-          onPress={handleSubmit(onSubmit)}
-          icon={<UserPlus size={18} color={colors.textOnAccent} />}
-        />
-      </View>
+          {/* Validation errors */}
+          {(errors.name || errors.phone || errors.email) && (
+            <View style={styles.errorsBox}>
+              {errors.name && (
+                <Text style={styles.errorText}>{errors.name.message}</Text>
+              )}
+              {errors.phone && (
+                <Text style={styles.errorText}>{errors.phone.message}</Text>
+              )}
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email.message}</Text>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.hint}>
+            Phone number is the primary contact. Email is not required.
+          </Text>
+        </ScrollView>
+
+        {/* Bottom button */}
+        <BottomActionBar paddingBottom={insets.bottom + 16}>
+          <Button
+            title={t("clientForm.save")}
+            onPress={handleSubmit(onSubmit)}
+            icon={<UserPlus size={18} color={colors.textOnAccent} />}
+          />
+        </BottomActionBar>
+      </KeyboardAvoidingView>
 
       <LocationSheet
         visible={locationSheetOpen}

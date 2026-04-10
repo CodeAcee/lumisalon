@@ -2,8 +2,15 @@ import { memo, useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { Phone, MapPin, Calendar, ChevronRight } from "lucide-react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { FontSize, BorderRadius } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 import { format } from "date-fns";
 import type { Client } from "../../types";
 
@@ -20,6 +27,10 @@ export const ClientCard = memo(function ClientCard({
 }: Props) {
   const colors = useColors();
   const s = useMemo(() => styles(colors), [colors]);
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const initials = useMemo(
     () =>
@@ -41,7 +52,16 @@ export const ClientCard = memo(function ClientCard({
   );
 
   return (
-    <Pressable style={s.card} onPress={onPress}>
+    <AnimatedPressable
+      style={[s.card, animStyle]}
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withSpring(0.97, { damping: 15 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15 });
+      }}
+    >
       <View style={s.avatarWrap}>
         {client.avatar ? (
           <Image
@@ -84,7 +104,7 @@ export const ClientCard = memo(function ClientCard({
           </View>
         )}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 });
 

@@ -8,6 +8,7 @@ import { Image } from "expo-image";
 import { Check, MapPin, Plus, X } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../theme/ThemeContext";
 import { AppSheet } from "./AppSheet";
 import { FontSize, BorderRadius } from "../../constants/theme";
@@ -41,6 +42,7 @@ export function LocationSheet({
   const colors = useColors();
   const { bottom } = useSafeAreaInsets();
   const locations = useAppStore((s) => s.locations);
+  const { t } = useTranslation();
   const s = styles(colors);
 
   const handleSelect = (id: string | null) => {
@@ -60,7 +62,13 @@ export function LocationSheet({
   return (
     <AppSheet snapPoints={["60%"]} portal={portal} index={0} onClose={onClose}>
       <View style={s.header}>
-        <Text style={s.title}>{title}</Text>
+        <Text style={s.title}>
+          {title === "Select Location"
+            ? t("locationSheet.title")
+            : title === "Filter by Location"
+              ? t("locationSheet.filterTitle")
+              : title}
+        </Text>
         <Pressable onPress={onClose} hitSlop={10}>
           <X size={20} color={colors.textPrimary} />
         </Pressable>
@@ -83,7 +91,7 @@ export function LocationSheet({
               <MapPin size={18} color={colors.textSecondary} />
             </View>
             <View style={s.rowInfo}>
-              <Text style={s.rowName}>All Locations</Text>
+              <Text style={s.rowName}>{t("locationSheet.allLocations")}</Text>
             </View>
             {!selectedId && <Check size={16} color={colors.accent} />}
           </Pressable>
@@ -124,7 +132,7 @@ export function LocationSheet({
         })}
 
         {locations.length === 0 && (
-          <Text style={s.empty}>No locations yet.</Text>
+          <Text style={s.empty}>{t("locationSheet.noLocations")}</Text>
         )}
 
         <Pressable
@@ -135,7 +143,7 @@ export function LocationSheet({
           }}
         >
           <Plus size={16} color={colors.accent} />
-          <Text style={s.addText}>Add Location</Text>
+          <Text style={s.addText}>{t("locationSheet.addLocation")}</Text>
         </Pressable>
       </BottomSheetScrollView>
     </AppSheet>

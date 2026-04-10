@@ -14,6 +14,8 @@ import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { scheduleWorkingHourNotifications } from "../src/lib/workingHoursNotifications";
 import { useSettingsStore } from "../src/store/settings";
+import "../src/i18n";
+import i18n from "../src/i18n";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -99,6 +101,10 @@ function AppShell() {
           options={{ animation: "slide_from_right" }}
         />
         <Stack.Screen
+          name="settings/language"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
           name="client/edit"
           options={{
             animation: "slide_from_bottom",
@@ -128,10 +134,13 @@ export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
     // Restore scheduled working-hours notifications on each app launch
-    const { workingHours, notifications } = useSettingsStore.getState();
+    const { workingHours, notifications, language } =
+      useSettingsStore.getState();
     const enabled =
       notifications.allowNotifications && notifications.appointmentReminders;
     scheduleWorkingHourNotifications(workingHours, enabled);
+    // Apply persisted language
+    i18n.changeLanguage(language ?? "en");
   }, []);
 
   return (

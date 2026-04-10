@@ -1,84 +1,34 @@
-import { Tabs } from "expo-router";
-import { StyleSheet, Platform } from "react-native";
-import {
-  Home,
-  Users,
-  Scissors,
-  Settings as SettingsIcon,
-} from "lucide-react-native";
-import { useColors } from "../../src/theme/ThemeContext";
+import { DynamicColorIOS } from "react-native";
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+import { useTranslation } from "react-i18next";
 
 export default function TabLayout() {
-  const colors = useColors();
-  const styles = makeStyles(colors);
-  return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.navActive,
-        tabBarInactiveTintColor: colors.navInactive,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <Home size={22} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="masters"
-        options={{
-          title: "Masters",
-          tabBarIcon: ({ color }) => <Scissors size={22} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="clients"
-        options={{
-          title: "Clients",
-          tabBarIcon: ({ color }) => <Users size={22} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} />,
-        }}
-      />
-      <Tabs.Screen name="NotificationsScreen" options={{ href: null }} />
-    </Tabs>
-  );
-}
+  const { t } = useTranslation();
 
-function makeStyles(c: ReturnType<typeof useColors>) {
-  return StyleSheet.create({
-    tabBar: {
-      position: "absolute",
-      bottom: Platform.OS === "ios" ? 28 : 16,
-      marginHorizontal: 24,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: c.white,
-      borderTopWidth: 0,
-      elevation: 8,
-      shadowColor: "#2D2321",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.08,
-      shadowRadius: 24,
-      paddingBottom: 0,
-    },
-    tabLabel: {
-      fontSize: 10,
-      fontWeight: "500",
-      marginTop: -2,
-    },
-    tabItem: {
-      paddingTop: 8,
-    },
-  });
+  return (
+    <NativeTabs
+      labelStyle={{
+        fontSize: 10,
+        color: DynamicColorIOS({ dark: "white", light: "black" }),
+      }}
+      tintColor={DynamicColorIOS({ dark: "white", light: "black" })}
+    >
+      <NativeTabs.Trigger name="index">
+        <Label>{t("tabs.home")}</Label>
+        <Icon sf={{ default: "house", selected: "house.fill" }} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="masters">
+        <Label>{t("tabs.masters")}</Label>
+        <Icon sf={{ default: "scissors", selected: "scissors" }} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="clients">
+        <Label>{t("tabs.clients")}</Label>
+        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="settings">
+        <Label>{t("tabs.settings")}</Label>
+        <Icon sf={{ default: "gearshape", selected: "gearshape.fill" }} />
+      </NativeTabs.Trigger>
+    </NativeTabs>
+  );
 }

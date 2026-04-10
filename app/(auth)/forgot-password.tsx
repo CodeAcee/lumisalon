@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Send } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
@@ -32,6 +33,7 @@ export default function ForgotPasswordScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const sent = useForgotStore((s) => s.sent);
   const setSent = useForgotStore((s) => s.setSent);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -61,7 +63,7 @@ export default function ForgotPasswordScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Forgot Password</Text>
+        <Text style={styles.headerTitle}>{t("forgotPassword.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -71,12 +73,14 @@ export default function ForgotPasswordScreen() {
         </View>
 
         <Text style={styles.title}>
-          {sent ? "Check your email" : "Reset Password"}
+          {sent
+            ? t("forgotPassword.checkEmail")
+            : t("forgotPassword.resetTitle")}
         </Text>
         <Text style={styles.subtitle}>
           {sent
-            ? "We sent a password reset link to your email address."
-            : "Enter your email address and we'll send you a link to reset your password."}
+            ? t("forgotPassword.emailSentSubtitle")
+            : t("forgotPassword.resetSubtitle")}
         </Text>
 
         {!sent && (
@@ -92,7 +96,7 @@ export default function ForgotPasswordScreen() {
                   >
                     <Mail size={18} color={colors.textTertiary} />
                     <TextInput
-                      placeholder="Email Address"
+                      placeholder={t("forgotPassword.emailPlaceholder")}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -109,19 +113,26 @@ export default function ForgotPasswordScreen() {
               )}
             />
             <View style={{ height: 24 }} />
-            <Button
-              title="Send Reset Link"
-              onPress={handleSubmit(onSubmit)}
-              loading={isLoading}
-              icon={<Send size={16} color={colors.textOnAccent} />}
-            />
+            <View style={styles.buttonWrap}>
+              <Button
+                title={t("forgotPassword.sendResetLink")}
+                onPress={handleSubmit(onSubmit)}
+                loading={isLoading}
+                icon={<Send size={16} color={colors.textOnAccent} />}
+              />
+            </View>
           </>
         )}
 
         {sent && (
           <>
             <View style={{ height: 32 }} />
-            <Button title="Back to Login" onPress={() => router.back()} />
+            <View style={styles.buttonWrap}>
+              <Button
+                title={t("forgotPassword.backToLogin")}
+                onPress={() => router.back()}
+              />
+            </View>
           </>
         )}
       </View>
@@ -160,6 +171,10 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingHorizontal: 24,
       paddingTop: 60,
       alignItems: "center",
+      width: "100%",
+    },
+    buttonWrap: {
+      width: "100%",
     },
     iconCircle: {
       width: 80,

@@ -7,6 +7,8 @@ import {
   ScrollView,
   FlatList,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,13 +24,15 @@ import {
   Plus,
   MapPin,
 } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { create } from "zustand";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
+import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { Chip } from "../../src/components/ui/Chip";
 import { Avatar } from "../../src/components/ui/Avatar";
 import { LocationSheet } from "../../src/components/ui/LocationSheet";
@@ -56,14 +60,25 @@ const useCreateProcStore = create<{
   reset: () => set({ photos: [] }),
 }));
 
-const DEFAULT_POSITIONS: Position[] = ["Nails", "Hair", "Skin", "Lashes", "Lashmaker", "Colorist"];
+const DEFAULT_POSITIONS: Position[] = [
+  "Nails",
+  "Hair",
+  "Skin",
+  "Lashes",
+  "Lashmaker",
+  "Colorist",
+];
 const MAX_PHOTOS = 10;
 
 export default function CreateProcedureScreen() {
-  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const { editId, locationId: defaultLocationId } = useLocalSearchParams<{
+    editId?: string;
+    locationId?: string;
+  }>();
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const addProcedure = useAppStore((s) => s.addProcedure);
   const updateProcedure = useAppStore((s) => s.updateProcedure);
   const masters = useAppStore((s) => s.masters);
@@ -76,8 +91,9 @@ export default function CreateProcedureScreen() {
   const isEditMode = !!editId && !!existingProc;
 
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
-    existingProc?.locationId ?? null,
+    existingProc?.locationId ?? defaultLocationId ?? null,
   );
+  const scrollRef = useRef<ScrollView>(null);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
 
   // Photo store — pre-fill from existing procedure when editing
@@ -152,7 +168,7 @@ export default function CreateProcedureScreen() {
     const newMaster = masters.find((m) => m.id === masterId);
     if (newMaster) {
       const compatiblePositions = (selectedPositions || []).filter((p) =>
-        newMaster.positions.includes(p),
+        newMaster.positions.includes(p as Position),
       );
       setValue("positions", compatiblePositions, { shouldValidate: false });
     }
@@ -247,195 +263,223 @@ export default function CreateProcedureScreen() {
         >
           <X size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>
-          {isEditMode ? "Edit Procedure" : "New Procedure"}
-        </Text>
+
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.divider} />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Location selector */}
-        <Text style={styles.sectionLabel}>LOCATION</Text>
-        <Pressable
-          style={styles.selectorCard}
-          onPress={() => setLocationSheetOpen(true)}
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
         >
-          <MapPin size={18} color={colors.textTertiary} />
-          <Text
-            style={[
-              styles.selectorText,
-              selectedLocationId && styles.selectorSelected,
-            ]}
-          >
-            {selectedLocationId
-              ? (locations.find((l) => l.id === selectedLocationId)?.name ??
-                "Select location...")
-              : "Select location..."}
+          {/* Location selector */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.location").toUpperCase()}
           </Text>
-          <ChevronRight size={18} color={colors.textTertiary} />
-        </Pressable>
-
-        {/* Master selector */}
-        <Text style={styles.sectionLabel}>MASTER</Text>
-        <Pressable
-          style={[styles.selectorCard, errors.masterId && styles.selectorError]}
-          onPress={() => {
-            setMasterSearch("");
-            setMasterModalOpen(true);
-          }}
-        >
-          <Search size={18} color={colors.textTertiary} />
-          <Text
-            style={[
-              styles.selectorText,
-              selectedMasterObj && styles.selectorSelected,
-            ]}
+          <Pressable
+            style={styles.selectorCard}
+            onPress={() => setLocationSheetOpen(true)}
           >
-            {selectedMasterObj?.name || "Select master..."}
-          </Text>
-          <ChevronRight size={18} color={colors.textTertiary} />
-        </Pressable>
-        {errors.masterId && (
-          <Text style={styles.errorText}>{errors.masterId.message}</Text>
-        )}
+            <MapPin size={18} color={colors.textTertiary} />
+            <Text
+              style={[
+                styles.selectorText,
+                selectedLocationId && styles.selectorSelected,
+              ]}
+            >
+              {selectedLocationId
+                ? (locations.find((l) => l.id === selectedLocationId)?.name ??
+                  t("procedureForm.selectLocation"))
+                : t("procedureForm.selectLocation")}
+            </Text>
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
 
-        {/* Client selector */}
-        <Text style={styles.sectionLabel}>CLIENT</Text>
-        <Pressable
-          style={[styles.selectorCard, errors.clientId && styles.selectorError]}
-          onPress={() => {
-            setClientSearch("");
-            setClientModalOpen(true);
-          }}
-        >
-          <Search size={18} color={colors.textTertiary} />
-          <Text
+          {/* Master selector */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.master").toUpperCase()}
+          </Text>
+          <Pressable
             style={[
-              styles.selectorText,
-              selectedClientObj && styles.selectorSelected,
+              styles.selectorCard,
+              errors.masterId && styles.selectorError,
             ]}
+            onPress={() => {
+              setMasterSearch("");
+              setMasterModalOpen(true);
+            }}
           >
-            {selectedClientObj?.name || "Select client..."}
+            <Search size={18} color={colors.textTertiary} />
+            <Text
+              style={[
+                styles.selectorText,
+                selectedMasterObj && styles.selectorSelected,
+              ]}
+            >
+              {selectedMasterObj?.name || t("procedureForm.selectMaster")}
+            </Text>
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
+          {errors.masterId && (
+            <Text style={styles.errorText}>{errors.masterId.message}</Text>
+          )}
+
+          {/* Client selector */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.client").toUpperCase()}
           </Text>
-          <ChevronRight size={18} color={colors.textTertiary} />
-        </Pressable>
-        {errors.clientId && (
-          <Text style={styles.errorText}>{errors.clientId.message}</Text>
-        )}
-
-        {/* Services */}
-        <Text style={styles.sectionLabel}>SERVICES</Text>
-        <View style={styles.detailsCard}>
-          <Text style={styles.fieldTitle}>Positions / Services</Text>
-          {selectedMasterObj && availablePositions.length === 0 && (
-            <Text style={styles.skillWarning}>
-              This master has no matching services for this screen.
+          <Pressable
+            style={[
+              styles.selectorCard,
+              errors.clientId && styles.selectorError,
+            ]}
+            onPress={() => {
+              setClientSearch("");
+              setClientModalOpen(true);
+            }}
+          >
+            <Search size={18} color={colors.textTertiary} />
+            <Text
+              style={[
+                styles.selectorText,
+                selectedClientObj && styles.selectorSelected,
+              ]}
+            >
+              {selectedClientObj?.name || t("procedureForm.selectClient")}
             </Text>
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
+          {errors.clientId && (
+            <Text style={styles.errorText}>{errors.clientId.message}</Text>
           )}
-          {selectedMasterObj && (
-            <Text style={styles.skillHint}>
-              Showing services for {selectedMasterObj.name} (
-              {selectedMasterObj.positions.join(", ")})
-            </Text>
-          )}
-          <View style={styles.chipsRow}>
-            {availablePositions.map((pos) => (
-              <Chip
-                key={pos}
-                label={pos}
-                active={selectedPositions?.includes(pos)}
-                onPress={() => togglePosition(pos)}
-              />
-            ))}
-          </View>
-          {selectedPositions && selectedPositions.length > 0 && (
-            <Text style={styles.selectionHint}>
-              Selected: {selectedPositions.join(", ")}
-            </Text>
-          )}
-          {errors.positions && (
-            <Text style={styles.errorTextInline}>
-              {errors.positions.message}
-            </Text>
-          )}
-        </View>
 
-        {/* Notes */}
-        <Text style={styles.sectionLabel}>NOTES</Text>
-        <Controller
-          control={control}
-          name="notes"
-          render={({ field: { onChange, value } }) => (
-            <View style={styles.notesCard}>
-              <TextInput
-                placeholder="Special notes (supports **bold**, *italic*, - lists)"
-                value={value}
-                onChangeText={onChange}
-                placeholderTextColor={colors.textTertiary}
-                style={styles.noteInput}
-                multiline
-                textAlignVertical="top"
-              />
-            </View>
-          )}
-        />
-
-        {/* Photos */}
-        <Text style={styles.sectionLabel}>
-          PHOTOS ({photos.length}/{MAX_PHOTOS})
-        </Text>
-
-        {/* Photo grid */}
-        {photos.length > 0 && (
-          <View style={styles.photoGrid}>
-            {photos.map((uri) => (
-              <View key={uri} style={styles.photoThumb}>
-                <Image
-                  source={{ uri }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                  transition={200}
+          {/* Services */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.services").toUpperCase()}
+          </Text>
+          <View style={styles.detailsCard}>
+            <Text style={styles.fieldTitle}>Positions / Services</Text>
+            {selectedMasterObj && availablePositions.length === 0 && (
+              <Text style={styles.skillWarning}>
+                This master has no matching services for this screen.
+              </Text>
+            )}
+            {selectedMasterObj && (
+              <Text style={styles.skillHint}>
+                Showing services for {selectedMasterObj.name} (
+                {selectedMasterObj.positions.join(", ")})
+              </Text>
+            )}
+            <View style={styles.chipsRow}>
+              {availablePositions.map((pos) => (
+                <Chip
+                  key={pos}
+                  label={pos}
+                  active={selectedPositions?.includes(pos)}
+                  onPress={() => togglePosition(pos)}
                 />
-                <Pressable
-                  style={styles.photoRemoveBtn}
-                  onPress={() => removePhoto(uri)}
-                  hitSlop={4}
-                >
-                  <X size={12} color="#fff" />
-                </Pressable>
-              </View>
-            ))}
-            {photos.length < MAX_PHOTOS && (
-              <Pressable style={styles.photoAddThumb} onPress={pickImages}>
-                <ImagePlus size={22} color={colors.textTertiary} />
-              </Pressable>
+              ))}
+            </View>
+            {selectedPositions && selectedPositions.length > 0 && (
+              <Text style={styles.selectionHint}>
+                Selected: {selectedPositions.join(", ")}
+              </Text>
+            )}
+            {errors.positions && (
+              <Text style={styles.errorTextInline}>
+                {errors.positions.message}
+              </Text>
             )}
           </View>
-        )}
 
-        {/* Add photos button (when no photos yet) */}
-        {photos.length === 0 && (
-          <Pressable style={styles.photoCard} onPress={pickImages}>
-            <ImagePlus size={24} color={colors.textTertiary} />
-            <Text style={styles.photoText}>Add work photos</Text>
-          </Pressable>
-        )}
-      </ScrollView>
+          {/* Notes */}
+          <Text style={styles.sectionLabel}>
+            {t("procedureForm.notes").toUpperCase()}
+          </Text>
+          <Controller
+            control={control}
+            name="notes"
+            render={({ field: { onChange, value } }) => (
+              <View style={styles.notesCard}>
+                <TextInput
+                  placeholder={t("procedureForm.notesPlaceholder")}
+                  value={value}
+                  onChangeText={onChange}
+                  placeholderTextColor={colors.textTertiary}
+                  style={styles.noteInput}
+                  multiline
+                  textAlignVertical="top"
+                  onFocus={() =>
+                    setTimeout(
+                      () => scrollRef.current?.scrollToEnd({ animated: true }),
+                      200,
+                    )
+                  }
+                />
+              </View>
+            )}
+          />
 
-      {/* Bottom button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <Button
-          title={isEditMode ? "Save Changes" : "Create Procedure"}
-          onPress={handleSubmit(onSubmit)}
-          loading={isLoading}
-          icon={<Sparkles size={18} color={colors.textOnAccent} />}
-        />
-      </View>
+          {/* Photos */}
+          <Text style={styles.sectionLabel}>
+            PHOTOS ({photos.length}/{MAX_PHOTOS})
+          </Text>
+
+          {/* Photo grid */}
+          {photos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {photos.map((uri) => (
+                <View key={uri} style={styles.photoThumb}>
+                  <Image
+                    source={{ uri }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <Pressable
+                    style={styles.photoRemoveBtn}
+                    onPress={() => removePhoto(uri)}
+                    hitSlop={4}
+                  >
+                    <X size={12} color="#fff" />
+                  </Pressable>
+                </View>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <Pressable style={styles.photoAddThumb} onPress={pickImages}>
+                  <ImagePlus size={22} color={colors.textTertiary} />
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* Add photos button (when no photos yet) */}
+          {photos.length === 0 && (
+            <Pressable style={styles.photoCard} onPress={pickImages}>
+              <ImagePlus size={24} color={colors.textTertiary} />
+              <Text style={styles.photoText}>
+                {t("procedureForm.addPhoto")}
+              </Text>
+            </Pressable>
+          )}
+        </ScrollView>
+
+        {/* Bottom button */}
+        <BottomActionBar paddingBottom={insets.bottom + 16}>
+          <Button
+            title={isEditMode ? t("common.save") : t("procedureForm.newTitle")}
+            onPress={handleSubmit(onSubmit)}
+            loading={isLoading}
+            icon={<Sparkles size={18} color={colors.textOnAccent} />}
+          />
+        </BottomActionBar>
+      </KeyboardAvoidingView>
 
       {/* Master Select Bottom Sheet */}
       {!!masterModalOpen && (
@@ -446,7 +490,9 @@ export default function CreateProcedureScreen() {
           keyboardBehavior="interactive"
         >
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Master</Text>
+            <Text style={styles.modalTitle}>
+              {t("procedureForm.selectMaster")}
+            </Text>
             <Pressable onPress={() => setMasterModalOpen(false)}>
               <X size={20} color={colors.textPrimary} />
             </Pressable>
@@ -455,14 +501,25 @@ export default function CreateProcedureScreen() {
           <View style={styles.modalSearch}>
             <Search size={18} color={colors.textTertiary} />
             <BottomSheetTextInput
-              placeholder="Search masters..."
-              value={masterSearch}
+              placeholder={t("masters.searchPlaceholder")}
               onChangeText={setMasterSearch}
               placeholderTextColor={colors.textTertiary}
               style={styles.modalSearchInput}
               autoFocus
             />
           </View>
+
+          {/* Add master button */}
+          <Pressable
+            style={styles.addClientBtn}
+            onPress={() => {
+              setMasterModalOpen(false);
+              router.push("/master/create");
+            }}
+          >
+            <Plus size={18} color={colors.accent} />
+            <Text style={styles.addClientText}>{t("masters.addMaster")}</Text>
+          </Pressable>
 
           <BottomSheetFlatList
             data={filteredMasters}
@@ -518,7 +575,9 @@ export default function CreateProcedureScreen() {
           keyboardBehavior="interactive"
         >
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Client</Text>
+            <Text style={styles.modalTitle}>
+              {t("procedureForm.selectClient")}
+            </Text>
             <Pressable onPress={() => setClientModalOpen(false)}>
               <X size={20} color={colors.textPrimary} />
             </Pressable>
@@ -527,8 +586,7 @@ export default function CreateProcedureScreen() {
           <View style={styles.modalSearch}>
             <Search size={18} color={colors.textTertiary} />
             <BottomSheetTextInput
-              placeholder="Search clients..."
-              value={clientSearch}
+              placeholder={t("clients.searchPlaceholder")}
               onChangeText={setClientSearch}
               placeholderTextColor={colors.textTertiary}
               style={styles.modalSearchInput}
@@ -545,7 +603,7 @@ export default function CreateProcedureScreen() {
             }}
           >
             <Plus size={18} color={colors.accent} />
-            <Text style={styles.addClientText}>Add New Client</Text>
+            <Text style={styles.addClientText}>{t("clients.addClient")}</Text>
           </Pressable>
 
           <BottomSheetFlatList
@@ -610,7 +668,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingHorizontal: 16,
       paddingTop: 20,
       gap: 12,
-      paddingBottom: 140,
+      paddingBottom: 100,
     },
     sectionLabel: {
       fontSize: FontSize.xs,

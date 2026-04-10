@@ -7,25 +7,32 @@ import {
   TextInput,
   Keyboard,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, Plus, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { FlashList } from "@shopify/flash-list";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
-import { useColors } from "../../src/theme/ThemeContext";
+import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { MasterCard } from "../../src/components/ui/MasterCard";
 import { ListSkeleton } from "../../src/components/ui/SkeletonCard";
 import { useAppStore } from "../../src/store";
 import type { Master } from "../../src/types";
+import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 
 // Stable separator — defined outside so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
 const SEPARATOR_STYLE = { height: 10 };
 
+const isGlassAvailable = isGlassEffectAPIAvailable();
+
 export default function MastersScreen() {
   const colors = useColors();
+  const { isDark } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const masterSearch = useAppStore((state) => state.masterSearch);
   const setMasterSearch = useAppStore((state) => state.setMasterSearch);
   const getFilteredMasters = useAppStore((state) => state.getFilteredMasters);
@@ -40,10 +47,10 @@ export default function MastersScreen() {
   const ListEmpty = useMemo(
     () => (
       <View style={s.emptyCard}>
-        <Text style={s.emptyText}>No masters found</Text>
+        <Text style={s.emptyText}>{t("masters.noMasters")}</Text>
       </View>
     ),
-    [s],
+    [s, t],
   );
 
   const renderMaster = useCallback(
@@ -69,22 +76,40 @@ export default function MastersScreen() {
       style={[s.container, { paddingTop: insets.top }]}
       onPress={Keyboard.dismiss}
     >
-      <View style={s.header}>
-        <Text style={s.title}>Masters</Text>
+      <Animated.View
+        entering={FadeInDown.delay(0).duration(400)}
+        style={s.header}
+      >
+        <Text style={s.title}>{t("masters.title")}</Text>
+
         <Pressable
           onPress={() => router.push("/master/create")}
           style={[s.iconBtn, s.plusBtn]}
         >
-          <Plus size={20} color={colors.textOnAccent} />
+          {isGlassAvailable ? (
+            <GlassView
+              style={s.iconBtn}
+              glassEffectStyle="clear"
+              colorScheme={isDark ? "light" : "dark"}
+              isInteractive
+            >
+              <Plus size={24} color={isDark ? "#fff" : "#000"} />
+            </GlassView>
+          ) : (
+            <Plus size={20} color={colors.textOnAccent} />
+          )}
         </Pressable>
-      </View>
+      </Animated.View>
 
-      <View style={s.searchContainer}>
+      <Animated.View
+        entering={FadeInDown.delay(60).duration(400)}
+        style={s.searchContainer}
+      >
         <Search size={18} color={colors.textTertiary} />
         <TextInput
           value={masterSearch}
           onChangeText={setMasterSearch}
-          placeholder="Search masters..."
+          placeholder={t("masters.searchPlaceholder")}
           placeholderTextColor={colors.textTertiary}
           style={s.searchInput}
           returnKeyType="search"
@@ -94,7 +119,7 @@ export default function MastersScreen() {
             <X size={16} color={colors.textTertiary} />
           </Pressable>
         )}
-      </View>
+      </Animated.View>
 
       <View style={s.subHeader}>
         <Text style={s.subHeaderText}>

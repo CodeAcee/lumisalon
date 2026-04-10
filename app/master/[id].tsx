@@ -7,9 +7,11 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Phone,
@@ -33,6 +35,7 @@ export default function MasterDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const styles = makeStyles(colors);
+  const { t } = useTranslation();
   const master = useAppStore((s) => s.masters.find((m) => m.id === id));
   const allProcedures = useAppStore((s) => s.procedures);
   const procedures = useMemo(
@@ -45,12 +48,12 @@ export default function MasterDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Master",
-      "Are you sure you want to delete this master? This action cannot be undone.",
+      t("masterDetail.deleteMaster"),
+      t("masterDetail.deleteConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => {
             removeMaster(id);
@@ -81,7 +84,7 @@ export default function MasterDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconBtn}>
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Master Profile</Text>
+        <Text style={styles.headerTitle}>{t("masterDetail.title")}</Text>
         <Pressable
           style={styles.iconBtn}
           onPress={() =>
@@ -97,7 +100,10 @@ export default function MasterDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile section */}
-        <View style={styles.profileSection}>
+        <Animated.View
+          entering={FadeInDown.delay(60).duration(400)}
+          style={styles.profileSection}
+        >
           <Avatar name={master.name} size={80} uri={master.avatar} />
           <Text style={styles.masterName}>{master.name}</Text>
           <View style={styles.badgeRow}>
@@ -110,19 +116,24 @@ export default function MasterDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statChip}>
               <Text style={styles.statValue}>{master.clientsServed}</Text>
-              <Text style={styles.statLabel}>clients</Text>
+              <Text style={styles.statLabel}>{t("masterDetail.clients")}</Text>
             </View>
             <View style={styles.statDot} />
             <View style={styles.statChip}>
               <Text style={styles.statValue}>{procedures.length}</Text>
-              <Text style={styles.statLabel}>procedures</Text>
+              <Text style={styles.statLabel}>
+                {t("masterDetail.procedures")}
+              </Text>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Contact & Locations */}
-        {(master.phone || locationNames) ? (
-          <View style={styles.infoCard}>
+        {master.phone || locationNames ? (
+          <Animated.View
+            entering={FadeInDown.delay(120).duration(400)}
+            style={styles.infoCard}
+          >
             {master.phone && (
               <Pressable
                 style={styles.infoRow}
@@ -143,52 +154,63 @@ export default function MasterDetailScreen() {
                 </View>
               </>
             ) : null}
-          </View>
+          </Animated.View>
         ) : null}
 
         {/* Recent Services */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Services</Text>
+        <Animated.View
+          entering={FadeInDown.delay(180).duration(400)}
+          style={styles.sectionHeader}
+        >
+          <Text style={styles.sectionTitle}>
+            {t("masterDetail.recentServices")}
+          </Text>
           <Pressable
             style={styles.addBtn}
             onPress={() => router.push("/procedure/create")}
           >
             <Plus size={16} color={colors.textOnAccent} />
-            <Text style={styles.addBtnText}>Add</Text>
+            <Text style={styles.addBtnText}>{t("common.add")}</Text>
           </Pressable>
-        </View>
+        </Animated.View>
 
         {procedures.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No services yet</Text>
+            <Text style={styles.emptyText}>
+              {t("masterDetail.noProcedures")}
+            </Text>
           </View>
         ) : (
-          procedures.slice(0, 5).map((proc) => {
+          procedures.slice(0, 5).map((proc, i) => {
             const client = clients.find((c) => c.id === proc.clientId);
             return (
-              <Pressable
+              <Animated.View
                 key={proc.id}
-                style={styles.serviceCard}
-                onPress={() => router.push(`/procedure/${proc.id}`)}
+                entering={FadeInDown.delay(240 + i * 60).duration(350)}
               >
-                <View style={styles.serviceDate}>
-                  <Calendar size={14} color={colors.accent} />
-                  <Text style={styles.serviceDateText}>
-                    {format(new Date(proc.date), "MMM d, yyyy · h:mm a")}
-                  </Text>
-                </View>
-                <View style={styles.serviceBody}>
-                  <View style={styles.serviceRow}>
-                    <Scissors size={13} color={colors.textSecondary} />
-                    <Text style={styles.serviceClient}>
-                      {client?.name || "Unknown"}
+                <Pressable
+                  style={styles.serviceCard}
+                  onPress={() => router.push(`/procedure/${proc.id}`)}
+                >
+                  <View style={styles.serviceDate}>
+                    <Calendar size={14} color={colors.accent} />
+                    <Text style={styles.serviceDateText}>
+                      {format(new Date(proc.date), "MMM d, yyyy · h:mm a")}
                     </Text>
                   </View>
-                  <Text style={styles.serviceType}>
-                    {proc.services.join(", ")}
-                  </Text>
-                </View>
-              </Pressable>
+                  <View style={styles.serviceBody}>
+                    <View style={styles.serviceRow}>
+                      <Scissors size={13} color={colors.textSecondary} />
+                      <Text style={styles.serviceClient}>
+                        {client?.name || "Unknown"}
+                      </Text>
+                    </View>
+                    <Text style={styles.serviceType}>
+                      {proc.services.join(", ")}
+                    </Text>
+                  </View>
+                </Pressable>
+              </Animated.View>
             );
           })
         )}
@@ -206,7 +228,9 @@ export default function MasterDetailScreen() {
 
         <Pressable style={styles.deleteRow} onPress={handleDelete}>
           <Trash2 size={18} color={colors.danger} />
-          <Text style={styles.deleteRowText}>Delete Master</Text>
+          <Text style={styles.deleteRowText}>
+            {t("masterDetail.deleteMaster")}
+          </Text>
         </Pressable>
 
         <View style={{ height: 40 }} />

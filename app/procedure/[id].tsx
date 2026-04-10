@@ -6,8 +6,10 @@ import {
   Alert,
   Dimensions,
   Linking,
+  ScrollView,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -115,6 +117,7 @@ export default function ProcedureDetailScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const procedure = useAppStore((s) => s.procedures.find((p) => p.id === id));
   const clients = useAppStore((s) => s.clients);
   const masters = useAppStore((s) => s.masters);
@@ -123,6 +126,15 @@ export default function ProcedureDetailScreen() {
   const activeTab = useProcDetailStore((s) => s.activeTab);
   const setActiveTab = useProcDetailStore((s) => s.setActiveTab);
   const openImageViewer = useUIStore((s) => s.openImageViewer);
+  const tabPagerRef = useRef<ScrollView>(null);
+
+  const TABS: Tab[] = ["Info", "Photos", "Notes"];
+
+  const scrollToTab = (tab: Tab) => {
+    const idx = TABS.indexOf(tab);
+    tabPagerRef.current?.scrollTo({ x: SCREEN_WIDTH * idx, animated: true });
+    setActiveTab(tab);
+  };
 
   // Reset to Info tab every time we open a different procedure
   useEffect(() => {
@@ -137,16 +149,6 @@ export default function ProcedureDetailScreen() {
     },
   });
 
-  const heroAnimatedStyle = useAnimatedStyle(() => {
-    const height = interpolate(
-      scrollY.value,
-      [0, HERO_MAX_HEIGHT - HERO_MIN_HEIGHT],
-      [HERO_MAX_HEIGHT, HERO_MIN_HEIGHT],
-      Extrapolation.CLAMP,
-    );
-    return { height };
-  });
-
   const heroImageAnimatedStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       scrollY.value,
@@ -154,13 +156,7 @@ export default function ProcedureDetailScreen() {
       [1.3, 1],
       Extrapolation.CLAMP,
     );
-    const opacity = interpolate(
-      scrollY.value,
-      [0, HERO_MAX_HEIGHT - HERO_MIN_HEIGHT],
-      [1, 0.3],
-      Extrapolation.CLAMP,
-    );
-    return { transform: [{ scale }], opacity };
+    return { transform: [{ scale }] };
   });
 
   const headerTitleAnimatedStyle = useAnimatedStyle(() => {
@@ -183,7 +179,7 @@ export default function ProcedureDetailScreen() {
       [0, 1],
       Extrapolation.CLAMP,
     );
-    return { backgroundColor: `rgba(245,240,237,${opacity})` };
+    return { opacity };
   });
 
   if (!procedure) {
@@ -211,12 +207,12 @@ export default function ProcedureDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Procedure",
-      "Are you sure you want to delete this procedure? This action cannot be undone.",
+      t("procedureDetail.deleteProcedure"),
+      t("procedureDetail.deleteConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => {
             removeProcedure(procedure.id);
@@ -230,7 +226,7 @@ export default function ProcedureDetailScreen() {
   return (
     <View style={styles.container}>
       {/* Animated Hero — always shows a real image */}
-      <Animated.View style={[styles.hero, heroAnimatedStyle]}>
+      <Animated.View style={[styles.hero]}>
         <Animated.View
           style={[StyleSheet.absoluteFill, heroImageAnimatedStyle]}
         >
@@ -247,18 +243,19 @@ export default function ProcedureDetailScreen() {
       </Animated.View>
 
       {/* Fixed header overlay */}
-      <Animated.View
-        style={[
-          styles.headerOverlay,
-          { paddingTop: insets.top },
-          headerBgAnimatedStyle,
-        ]}
-      >
+      <Animated.View style={[styles.headerOverlay, { paddingTop: insets.top }]}>
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            styles.headerBg,
+            headerBgAnimatedStyle,
+          ]}
+        />
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color={colors.white} />
         </Pressable>
         <Animated.Text style={[styles.headerTitle, headerTitleAnimatedStyle]}>
-          Procedure Details
+          {t("procedureDetail.title")}
         </Animated.Text>
         <Pressable
           style={styles.editBtn}
@@ -273,24 +270,25 @@ export default function ProcedureDetailScreen() {
         </Pressable>
       </Animated.View>
 
-      {/* Scrollable content */}
-      <Animated.ScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.contentInner,
-          { paddingTop: HERO_MAX_HEIGHT - 24 },
+      {/* Tab bar — sits just below the hero */}
+      <View
+        style={[
+          styles.contentCard,
+          { marginTop: HERO_MAX_HEIGHT - 24, zIndex: 2 },
         ]}
-        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentCard}>
-          {/* Tabs */}
-          <View style={styles.tabRow}>
-            {(["Info", "Photos", "Notes"] as Tab[]).map((tab) => (
+        <View style={styles.tabRow}>
+          {(["Info", "Photos", "Notes"] as Tab[]).map((tab) => {
+            const labelKey =
+              tab === "Info"
+                ? "procedureDetail.info"
+                : tab === "Photos"
+                  ? "procedureDetail.photos"
+                  : "procedureDetail.notes";
+            return (
               <Pressable
                 key={tab}
-                onPress={() => setActiveTab(tab)}
+                onPress={() => scrollToTab(tab)}
                 style={[styles.tab, activeTab === tab && styles.tabActive]}
               >
                 <Text
@@ -299,170 +297,229 @@ export default function ProcedureDetailScreen() {
                     activeTab === tab && styles.tabTextActive,
                   ]}
                 >
-                  {tab}
+                  {t(labelKey)}
                 </Text>
               </Pressable>
-            ))}
-          </View>
-          <View style={styles.tabDivider} />
+            );
+          })}
+        </View>
+        <View style={styles.tabDivider} />
+      </View>
 
-          {activeTab === "Info" && (
-            <>
-              {/* Client card */}
-              <View style={styles.detailCard}>
-                <Pressable
-                  style={styles.detailRow}
-                  onPress={() => client && router.push(`/client/${client.id}`)}
-                >
-                  <View style={styles.detailIconWrap}>
-                    <User size={16} color={colors.accent} />
-                  </View>
-                  <View style={styles.detailContent}>
-                    <Text style={styles.detailCaption}>Client</Text>
-                    <Text style={[styles.detailValue, styles.detailLink]}>
-                      {client?.name || "Unknown"}
-                    </Text>
-                  </View>
-                </Pressable>
-                {client?.phone && (
-                  <>
-                    <View style={styles.detailDivider} />
-                    <Pressable
-                      style={styles.detailRow}
-                      onPress={() => Linking.openURL(`tel:${client.phone}`)}
-                    >
-                      <View style={styles.detailIconWrap}>
-                        <Phone size={16} color={colors.accent} />
-                      </View>
-                      <View style={styles.detailContent}>
-                        <Text style={styles.detailCaption}>Phone</Text>
-                        <Text style={[styles.detailValue, styles.detailLink]}>
-                          {formatUkrainianPhone(client.phone)}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </>
-                )}
+      {/* Swipeable pager — fills remaining space */}
+      <ScrollView
+        ref={tabPagerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        style={styles.pager}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+          setActiveTab((["Info", "Photos", "Notes"] as Tab[])[idx]);
+        }}
+      >
+        {/* ── Info page ── */}
+        <Animated.ScrollView
+          style={{ width: SCREEN_WIDTH }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 60,
+          }}
+          showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+        >
+          {/* Client card */}
+          <View
+            style={[styles.detailCard, { marginHorizontal: 0, marginTop: 8 }]}
+          >
+            <Pressable
+              style={styles.detailRow}
+              onPress={() => client && router.push(`/client/${client.id}`)}
+            >
+              <View style={styles.detailIconWrap}>
+                <User size={16} color={colors.textOnAccent} />
               </View>
-
-              {/* Date & Master card */}
-              <View style={styles.detailCard}>
-                <View style={styles.detailRow}>
-                  <View style={styles.detailIconWrap}>
-                    <Calendar size={16} color={colors.accent} />
-                  </View>
-                  <View style={styles.detailContent}>
-                    <Text style={styles.detailCaption}>Date & Time</Text>
-                    <Text style={styles.detailValue}>
-                      {format(new Date(procedure.date), "MMMM d, yyyy · h:mm a")}
-                    </Text>
-                  </View>
-                </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailCaption}>Client</Text>
+                <Text style={[styles.detailValue, styles.detailLink]}>
+                  {client?.name || "Unknown"}
+                </Text>
+              </View>
+            </Pressable>
+            {client?.phone && (
+              <>
                 <View style={styles.detailDivider} />
                 <Pressable
                   style={styles.detailRow}
-                  onPress={() => master && router.push(`/master/${master.id}`)}
+                  onPress={() => Linking.openURL(`tel:${client.phone}`)}
                 >
                   <View style={styles.detailIconWrap}>
-                    <Scissors size={16} color={colors.accent} />
+                    <Phone size={16} color={colors.textOnAccent} />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailCaption}>Master</Text>
-                    <Text style={[styles.detailValue, master && styles.detailLink]}>
-                      {master?.name || "Unknown"}
+                    <Text style={styles.detailCaption}>
+                      {t("procedureDetail.phone")}
                     </Text>
-                    {master && (
-                      <Text style={styles.detailSub}>
-                        {master.positions.join(", ")}
-                      </Text>
-                    )}
+                    <Text style={[styles.detailValue, styles.detailLink]}>
+                      {formatUkrainianPhone(client.phone)}
+                    </Text>
                   </View>
                 </Pressable>
-                {procedure.locationId && (
-                  <>
-                    <View style={styles.detailDivider} />
-                    <View style={styles.detailRow}>
-                      <View style={styles.detailIconWrap}>
-                        <MapPin size={16} color={colors.accent} />
-                      </View>
-                      <View style={styles.detailContent}>
-                        <Text style={styles.detailCaption}>Location</Text>
-                        <Text style={styles.detailValue}>
-                          {locations.find((l) => l.id === procedure.locationId)?.name || "—"}
-                        </Text>
-                      </View>
-                    </View>
-                  </>
+              </>
+            )}
+          </View>
+
+          {/* Date & Master card */}
+          <View style={[styles.detailCard, { marginHorizontal: 0 }]}>
+            <View style={styles.detailRow}>
+              <View style={styles.detailIconWrap}>
+                <Calendar size={16} color={colors.textOnAccent} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailCaption}>
+                  {t("procedureDetail.dateTime")}
+                </Text>
+                <Text style={styles.detailValue}>
+                  {format(new Date(procedure.date), "MMMM d, yyyy · h:mm a")}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.detailDivider} />
+            <Pressable
+              style={styles.detailRow}
+              onPress={() => master && router.push(`/master/${master.id}`)}
+            >
+              <View style={styles.detailIconWrap}>
+                <Scissors size={16} color={colors.textOnAccent} />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailCaption}>Master</Text>
+                <Text style={[styles.detailValue, master && styles.detailLink]}>
+                  {master?.name || "Unknown"}
+                </Text>
+                {master && (
+                  <Text style={styles.detailSub}>
+                    {master.positions.join(", ")}
+                  </Text>
                 )}
               </View>
-
-              {/* Service details card */}
-              <View style={styles.serviceCard}>
-                <View style={styles.serviceHeader}>
-                  <View style={styles.serviceIcon}>
-                    <Text style={{ fontSize: 16 }}>💅</Text>
+            </Pressable>
+            {procedure.locationId && (
+              <>
+                <View style={styles.detailDivider} />
+                <View style={styles.detailRow}>
+                  <View style={styles.detailIconWrap}>
+                    <MapPin size={16} color={colors.textOnAccent} />
                   </View>
-                  <Text style={styles.serviceTitle}>Service Details</Text>
-                </View>
-                <Text style={styles.serviceLabel}>Procedure Type</Text>
-                <Text style={styles.serviceName}>
-                  {procedure.services.join(" + ")}
-                </Text>
-                <View style={styles.serviceTags}>
-                  {procedure.positions.map((p) => (
-                    <PositionBadge key={p} position={p} />
-                  ))}
-                </View>
-              </View>
-
-              {/* Notes card */}
-              {procedure.notes && (
-                <View style={styles.notesCard}>
-                  <View style={styles.serviceHeader}>
-                    <Text style={{ fontSize: 16 }}>📝</Text>
-                    <Text style={styles.serviceTitle}>Administrator Notes</Text>
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailCaption}>
+                      {t("procedureDetail.location")}
+                    </Text>
+                    <Text style={styles.detailValue}>
+                      {locations.find((l) => l.id === procedure.locationId)
+                        ?.name || "—"}
+                    </Text>
                   </View>
-                  <Text style={styles.notesText}>{procedure.notes}</Text>
                 </View>
-              )}
+              </>
+            )}
+          </View>
 
-              {/* Delete button */}
-              <Pressable style={styles.deleteRow} onPress={handleDelete}>
-                <Trash2 size={18} color={colors.danger} />
-                <Text style={styles.deleteRowText}>Delete Procedure</Text>
-              </Pressable>
-            </>
-          )}
-
-          {activeTab === "Photos" &&
-            (procedure.photos && procedure.photos.length > 0 ? (
-              <View style={styles.photosGrid}>
-                {procedure.photos.map((photo, idx) => (
-                  <PhotoThumb
-                    key={photo + idx}
-                    uri={photo}
-                    size={PHOTO_SIZE}
-                    onPress={() => openImageViewer(procedure.photos!, idx)}
-                  />
-                ))}
+          {/* Service details card */}
+          <View style={[styles.serviceCard, { marginHorizontal: 0 }]}>
+            <View style={styles.serviceHeader}>
+              <View style={styles.serviceIcon}>
+                <Text style={{ fontSize: 16 }}>💅</Text>
               </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No photos added yet</Text>
-              </View>
-            ))}
-
-          {activeTab === "Notes" && (
-            <View style={styles.notesCard}>
-              <Text style={styles.notesText}>
-                {procedure.notes || "No notes for this procedure."}
+              <Text style={styles.serviceTitle}>
+                {t("procedureDetail.serviceDetails")}
               </Text>
+            </View>
+            <Text style={styles.serviceLabel}>
+              {t("procedureDetail.procedureType")}
+            </Text>
+            <Text style={styles.serviceName}>
+              {procedure.services.join(" + ")}
+            </Text>
+            <View style={styles.serviceTags}>
+              {procedure.positions.map((p) => (
+                <PositionBadge key={p} position={p} />
+              ))}
+            </View>
+          </View>
+
+          {/* Notes inline */}
+          {procedure.notes && (
+            <View style={[styles.notesCard, { marginHorizontal: 0 }]}>
+              <View style={styles.serviceHeader}>
+                <Text style={{ fontSize: 16 }}>📝</Text>
+                <Text style={styles.serviceTitle}>
+                  {t("procedureDetail.adminNotes")}
+                </Text>
+              </View>
+              <Text style={styles.notesText}>{procedure.notes}</Text>
             </View>
           )}
 
-          <View style={{ height: 60 }} />
-        </View>
-      </Animated.ScrollView>
+          {/* Delete button */}
+          <Pressable style={styles.deleteRow} onPress={handleDelete}>
+            <Trash2 size={18} color={colors.danger} />
+            <Text style={styles.deleteRowText}>
+              {t("procedureDetail.deleteProcedure")}
+            </Text>
+          </Pressable>
+        </Animated.ScrollView>
+
+        {/* ── Photos page ── */}
+        <ScrollView
+          style={{ width: SCREEN_WIDTH }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 60,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {procedure.photos && procedure.photos.length > 0 ? (
+            <View style={styles.photosGrid}>
+              {procedure.photos.map((photo, idx) => (
+                <PhotoThumb
+                  key={photo + idx}
+                  uri={photo}
+                  size={PHOTO_SIZE}
+                  onPress={() => openImageViewer(procedure.photos!, idx)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {t("procedureDetail.noPhotos")}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* ── Notes page ── */}
+        <ScrollView
+          style={{ width: SCREEN_WIDTH }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 60,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.notesCard}>
+            <Text style={styles.notesText}>
+              {procedure.notes || t("procedureDetail.noNotes")}
+            </Text>
+          </View>
+        </ScrollView>
+      </ScrollView>
     </View>
   );
 }
@@ -478,9 +535,13 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       top: 0,
       left: 0,
       right: 0,
+      height: HERO_MAX_HEIGHT,
       zIndex: 1,
-      backgroundColor: c.accentLight,
+      // backgroundColor: c.accentLight,
       overflow: "hidden",
+    },
+    headerBg: {
+      backgroundColor: c.bgPrimary,
     },
     heroGradient: {
       position: "absolute",
@@ -529,6 +590,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       elevation: 2,
     },
     scrollView: {
+      zIndex: 2,
+    },
+    pager: {
       flex: 1,
       zIndex: 2,
     },
@@ -536,7 +600,6 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.bgPrimary,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      minHeight: 500,
     },
     contentInner: {
       paddingBottom: 40,
@@ -609,7 +672,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       width: 32,
       height: 32,
       borderRadius: 8,
-      backgroundColor: c.accentLight,
+      backgroundColor: c.accent,
       alignItems: "center",
       justifyContent: "center",
     },

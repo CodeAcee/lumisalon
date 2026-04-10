@@ -12,6 +12,7 @@ import {
 } from "lucide-react-native";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
+import { useTranslation } from "react-i18next";
 import {
   useSettingsStore,
   type AppIconVariant,
@@ -41,6 +42,7 @@ export default function AppIconScreen() {
   const insets = useSafeAreaInsets();
   const appIcon = useSettingsStore((s) => s.appIcon);
   const setAppIcon = useSettingsStore((s) => s.setAppIcon);
+  const { t } = useTranslation();
 
   return (
     <View
@@ -56,12 +58,14 @@ export default function AppIconScreen() {
         >
           <ArrowLeft size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>App Icon</Text>
+        <Text style={styles.headerTitle}>{t("appIcon.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.sectionLabel}>CHOOSE APP ICON</Text>
+        <Text style={styles.sectionLabel}>
+          {t("appIcon.title").toUpperCase()}
+        </Text>
         <View style={styles.grid}>
           {ICONS.map((item, index) => {
             const Icon = item.icon;
@@ -72,44 +76,44 @@ export default function AppIconScreen() {
                 entering={FadeInDown.delay(index * 80).duration(350)}
                 style={{ width: "47%" as any }}
               >
-              <Pressable
-                style={[styles.iconCard, isActive && styles.iconCardActive]}
-                onPress={async () => {
-                  setAppIcon(item.id);
-                  try {
-                    await AlternateAppIcons?.setAlternateAppIcon(
-                      item.id === "default" ? null : item.id,
-                    );
-                  } catch {
-                    // Alternate icons not supported on this device/build
-                  }
-                }}
-              >
-                <View
-                  style={[styles.iconPreview, { backgroundColor: item.bg }]}
-                >
-                  <Icon
-                    size={28}
-                    color={
-                      item.id === "minimal" ? colors.textPrimary : "#FFFFFF"
+                <Pressable
+                  style={[styles.iconCard, isActive && styles.iconCardActive]}
+                  onPress={async () => {
+                    setAppIcon(item.id);
+                    try {
+                      await AlternateAppIcons?.setAlternateAppIcon(
+                        item.id === "default" ? null : item.id,
+                      );
+                    } catch {
+                      // Alternate icons not supported on this device/build
                     }
-                  />
-                </View>
-                <Text style={styles.iconLabel}>{item.label}</Text>
-                {isActive && (
-                  <View style={styles.checkBadge}>
-                    <Check size={12} color={colors.textOnAccent} />
+                  }}
+                >
+                  <View
+                    style={[styles.iconPreview, { backgroundColor: item.bg }]}
+                  >
+                    <Icon
+                      size={28}
+                      color={
+                        item.id === "minimal" ? colors.textPrimary : "#FFFFFF"
+                      }
+                    />
                   </View>
-                )}
-              </Pressable>
+                  <Text style={styles.iconLabel}>
+                    {t(`appIcon.${item.id}`)}
+                  </Text>
+                  {isActive && (
+                    <View style={styles.checkBadge}>
+                      <Check size={12} color={colors.textOnAccent} />
+                    </View>
+                  )}
+                </Pressable>
               </Animated.View>
             );
           })}
         </View>
 
-        <Text style={styles.hint}>
-          Change requires app restart on some devices.
-        </Text>
+        <Text style={styles.hint}>{t("appIcon.hint")}</Text>
       </View>
     </View>
   );

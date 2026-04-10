@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Mail, Lock, Eye, EyeOff, LogIn, Flower2 } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
@@ -24,6 +25,7 @@ export default function LoginScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const signIn = useAuthStore((s) => s.signIn);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setLoading = useAuthStore((s) => s.setLoading);
@@ -73,8 +75,8 @@ export default function LoginScreen() {
           <View style={styles.logoBox}>
             <Flower2 size={36} color={colors.white} />
           </View>
-          <Text style={styles.logoText}>LumiSalon</Text>
-          <Text style={styles.tagline}>Beauty, effortlessly managed.</Text>
+          <Text style={styles.logoText}>{t("login.title")}</Text>
+          <Text style={styles.tagline}>{t("login.tagline")}</Text>
         </View>
       </ImageBackground>
 
@@ -83,121 +85,125 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.formWrapper}
       >
-        <Pressable style={styles.formCard} onPress={Keyboard.dismiss}>
-          <Text style={styles.welcomeTitle}>Welcome back</Text>
-          <Text style={styles.welcomeSub}>
-            Sign in to your account to continue.
-          </Text>
+        <View style={styles.formCard}>
+          {/* Specular top edge highlight */}
+          <View pointerEvents="none" style={styles.formCardHighlight} />
+          <Pressable style={styles.formCardInner} onPress={Keyboard.dismiss}>
+            <Text style={styles.welcomeTitle}>{t("login.welcomeBack")}</Text>
+            <Text style={styles.welcomeSub}>{t("login.signInSubtitle")}</Text>
 
-          <View style={{ height: 20 }} />
+            <View style={{ height: 20 }} />
 
-          {/* Email */}
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
-                <View
-                  style={[
-                    styles.fieldContainer,
-                    errors.email && styles.fieldError,
-                  ]}
-                >
-                  <Mail size={18} color={colors.textTertiary} />
-                  <TextInput
-                    placeholder="Email Address"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    placeholderTextColor={colors.textTertiary}
-                    style={styles.fieldInput}
-                  />
+            {/* Email */}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View
+                    style={[
+                      styles.fieldContainer,
+                      errors.email && styles.fieldError,
+                    ]}
+                  >
+                    <Mail size={18} color={colors.textTertiary} />
+                    <TextInput
+                      placeholder={t("login.emailPlaceholder")}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      placeholderTextColor={colors.textTertiary}
+                      style={styles.fieldInput}
+                    />
+                  </View>
+                  {errors.email && (
+                    <Text style={styles.errorText}>{errors.email.message}</Text>
+                  )}
                 </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email.message}</Text>
-                )}
-              </View>
-            )}
-          />
+              )}
+            />
 
-          {/* Password */}
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
-                <View
-                  style={[
-                    styles.fieldContainer,
-                    errors.password && styles.fieldError,
-                  ]}
-                >
-                  <Lock size={18} color={colors.textTertiary} />
-                  <TextInput
-                    placeholder="Password"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    secureTextEntry={!passwordVisible}
-                    placeholderTextColor={colors.textTertiary}
-                    style={styles.fieldInput}
-                  />
-                  <Pressable onPress={togglePassword}>
-                    {passwordVisible ? (
-                      <EyeOff size={18} color={colors.textTertiary} />
-                    ) : (
-                      <Eye size={18} color={colors.textTertiary} />
-                    )}
-                  </Pressable>
+            {/* Password */}
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View
+                    style={[
+                      styles.fieldContainer,
+                      errors.password && styles.fieldError,
+                    ]}
+                  >
+                    <Lock size={18} color={colors.textTertiary} />
+                    <TextInput
+                      placeholder={t("login.passwordPlaceholder")}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      secureTextEntry={!passwordVisible}
+                      placeholderTextColor={colors.textTertiary}
+                      style={styles.fieldInput}
+                    />
+                    <Pressable onPress={togglePassword}>
+                      {passwordVisible ? (
+                        <EyeOff size={18} color={colors.textTertiary} />
+                      ) : (
+                        <Eye size={18} color={colors.textTertiary} />
+                      )}
+                    </Pressable>
+                  </View>
+                  {errors.password && (
+                    <Text style={styles.errorText}>
+                      {errors.password.message}
+                    </Text>
+                  )}
                 </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>
-                    {errors.password.message}
-                  </Text>
-                )}
-              </View>
-            )}
-          />
+              )}
+            />
 
-          {/* Forgot password */}
-          <Pressable
-            onPress={() => router.push("/(auth)/forgot-password")}
-            style={styles.forgotRow}
-          >
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </Pressable>
-
-          {/* Login button */}
-          <Button
-            title="Log In"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
-            icon={<LogIn size={18} color={colors.textOnAccent} />}
-          />
-
-          {/* Divider */}
-          <View style={styles.orRow}>
-            <View style={styles.orLine} />
-            <Text style={styles.orText}>or continue with</Text>
-            <View style={styles.orLine} />
-          </View>
-
-          {/* Google button */}
-          <Pressable style={styles.googleBtn}>
-            <Text style={styles.googleG}>G</Text>
-            <Text style={styles.googleText}>Continue with Google</Text>
-          </Pressable>
-
-          {/* Sign up link */}
-          <View style={styles.signupRow}>
-            <Text style={styles.signupLabel}>Don't have an account?</Text>
-            <Pressable onPress={() => router.push("/(auth)/signup")}>
-              <Text style={styles.signupLink}>Sign Up</Text>
+            {/* Forgot password */}
+            <Pressable
+              onPress={() => router.push("/(auth)/forgot-password")}
+              style={styles.forgotRow}
+            >
+              <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
             </Pressable>
-          </View>
-        </Pressable>
+
+            {/* Login button */}
+            <Button
+              title={t("login.logIn")}
+              onPress={handleSubmit(onSubmit)}
+              loading={isLoading}
+              icon={<LogIn size={18} color={colors.textOnAccent} />}
+            />
+
+            {/* Divider */}
+            <View style={styles.orRow}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>{t("login.orContinueWith")}</Text>
+              <View style={styles.orLine} />
+            </View>
+
+            {/* Google button */}
+            <Pressable style={styles.googleBtn}>
+              <Text style={styles.googleG}>G</Text>
+              <Text style={styles.googleText}>
+                {t("login.continueWithGoogle")}
+              </Text>
+            </Pressable>
+
+            {/* Sign up link */}
+            <View style={styles.signupRow}>
+              <Text style={styles.signupLabel}>{t("login.noAccount")}</Text>
+              <Pressable onPress={() => router.push("/(auth)/signup")}>
+                <Text style={styles.signupLink}>{t("login.signUp")}</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -247,9 +253,22 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginTop: -68,
     },
     formCard: {
-      backgroundColor: c.white,
+      overflow: "hidden",
       borderTopLeftRadius: 32,
       borderTopRightRadius: 32,
+      flex: 1,
+      backgroundColor: c.bgPrimary,
+    },
+    formCardHighlight: {
+      position: "absolute",
+      top: 0,
+      left: 32,
+      right: 32,
+      height: StyleSheet.hairlineWidth * 2,
+      backgroundColor: "rgba(255,255,255,0.85)",
+      zIndex: 10,
+    },
+    formCardInner: {
       paddingHorizontal: 24,
       paddingTop: 32,
       paddingBottom: 40,
@@ -328,6 +347,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       height: 52,
       gap: 10,
       marginBottom: 8,
+      paddingHorizontal: 16,
     },
     googleG: {
       fontSize: 18,

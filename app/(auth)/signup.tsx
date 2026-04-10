@@ -23,6 +23,7 @@ import {
 } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
@@ -33,6 +34,7 @@ export default function SignUpScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const signIn = useAuthStore((s) => s.signIn);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setLoading = useAuthStore((s) => s.setLoading);
@@ -78,7 +80,7 @@ export default function SignUpScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Create Account</Text>
+        <Text style={styles.headerTitle}>{t("signup.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -91,9 +93,7 @@ export default function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Join LumiSalon</Text>
-          <Text style={styles.subtitle}>
-            Create your account to start managing your salon.
-          </Text>
+          <Text style={styles.subtitle}>{t("signup.subtitle")}</Text>
 
           <View style={{ height: 24 }} />
 
@@ -106,7 +106,7 @@ export default function SignUpScreen() {
                 <View style={[styles.field, errors.name && styles.fieldError]}>
                   <User size={18} color={colors.textTertiary} />
                   <TextInput
-                    placeholder="Full Name"
+                    placeholder={t("signup.fullName")}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -130,7 +130,7 @@ export default function SignUpScreen() {
                 <View style={[styles.field, errors.phone && styles.fieldError]}>
                   <Phone size={18} color={colors.textTertiary} />
                   <TextInput
-                    placeholder="Phone Number"
+                    placeholder={t("signup.phonePlaceholder")}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -155,7 +155,7 @@ export default function SignUpScreen() {
                 <View style={[styles.field, errors.email && styles.fieldError]}>
                   <Mail size={18} color={colors.textTertiary} />
                   <TextInput
-                    placeholder="Email Address"
+                    placeholder={t("signup.emailPlaceholder")}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -183,7 +183,7 @@ export default function SignUpScreen() {
                 >
                   <Lock size={18} color={colors.textTertiary} />
                   <TextInput
-                    placeholder="Password"
+                    placeholder={t("signup.passwordPlaceholder")}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -222,7 +222,7 @@ export default function SignUpScreen() {
                 >
                   <Lock size={18} color={colors.textTertiary} />
                   <TextInput
-                    placeholder="Confirm Password"
+                    placeholder={t("signup.confirmPassword")}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -243,7 +243,7 @@ export default function SignUpScreen() {
           <View style={{ height: 24 }} />
 
           <Button
-            title="Create Account"
+            title={t("signup.createAccount")}
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             icon={<UserPlus size={18} color={colors.textOnAccent} />}
@@ -258,13 +258,17 @@ export default function SignUpScreen() {
 
           <Pressable style={styles.googleBtn}>
             <Text style={styles.googleG}>G</Text>
-            <Text style={styles.googleText}>Sign up with Google</Text>
+            <Text style={styles.googleText}>
+              {t("login.continueWithGoogle")}
+            </Text>
           </Pressable>
 
           <View style={styles.loginRow}>
-            <Text style={styles.loginLabel}>Already have an account?</Text>
+            <Text style={styles.loginLabel}>
+              {t("signup.alreadyHaveAccount")}
+            </Text>
             <Pressable onPress={() => router.back()}>
-              <Text style={styles.loginLink}>Sign In</Text>
+              <Text style={styles.loginLink}>{t("signup.signIn")}</Text>
             </Pressable>
           </View>
         </ScrollView>
