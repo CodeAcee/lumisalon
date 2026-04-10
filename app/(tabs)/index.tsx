@@ -51,17 +51,17 @@ function FAB({ onPress, style }: { onPress: () => void; style?: object }) {
   }));
 
   const inner = (
-    <AnimatedPressable
-      entering={ZoomIn.delay(300).duration(400)}
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.9, { damping: 12 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12 });
-      }}
-      style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
-    >
+    <Animated.View entering={ZoomIn.delay(300).duration(400)}>
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withSpring(0.9, { damping: 12 });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 12 });
+        }}
+        style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
+      >
       {isGlassAvailable ? (
         <GlassView
           style={styles.fabGlassInner}
@@ -74,6 +74,7 @@ function FAB({ onPress, style }: { onPress: () => void; style?: object }) {
         <Plus size={24} color={colors.textOnAccent} />
       )}
     </AnimatedPressable>
+    </Animated.View>
   );
 
   return inner;

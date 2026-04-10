@@ -9,6 +9,7 @@ import { useColors } from "../../src/theme/ThemeContext";
 import { useSettingsStore } from "../../src/store/settings";
 import { LANGUAGES, type LanguageCode } from "../../src/i18n";
 import i18n from "../../src/i18n";
+import * as Haptics from "expo-haptics";
 
 export default function LanguageScreen() {
   const colors = useColors();
@@ -20,6 +21,7 @@ export default function LanguageScreen() {
 
   const handleSelect = (code: LanguageCode) => {
     setLanguage(code);
+    Haptics.selectionAsync();
     i18n.changeLanguage(code);
   };
 

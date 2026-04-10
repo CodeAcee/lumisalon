@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Sun, Moon, Smartphone, Check } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import type { PaletteKey } from "../../src/constants/theme";
 import { useSettingsStore } from "../../src/store/settings";
@@ -194,7 +195,10 @@ export default function AppearanceScreen() {
                   key={def.key}
                   def={def}
                   isSelected={palette === def.key}
-                  onPress={() => setPalette(def.key)}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setPalette(def.key);
+                  }}
                 />
               ))}
             </View>
@@ -204,7 +208,10 @@ export default function AppearanceScreen() {
                   key={def.key}
                   def={def}
                   isSelected={palette === def.key}
-                  onPress={() => setPalette(def.key)}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setPalette(def.key);
+                  }}
                 />
               ))}
             </View>
@@ -212,7 +219,10 @@ export default function AppearanceScreen() {
               <PaletteSquare
                 def={PALETTE_DEFS[4]}
                 isSelected={palette === PALETTE_DEFS[4].key}
-                onPress={() => setPalette(PALETTE_DEFS[4].key)}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setPalette(PALETTE_DEFS[4].key);
+                }}
               />
             </View>
           </View>
@@ -231,7 +241,10 @@ export default function AppearanceScreen() {
                 <Pressable
                   key={mode}
                   style={[styles.modePill, isActive && styles.modePillActive]}
-                  onPress={() => setThemeMode(mode)}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setThemeMode(mode);
+                  }}
                 >
                   <Icon
                     size={14}
