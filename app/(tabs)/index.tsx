@@ -62,18 +62,18 @@ function FAB({ onPress, style }: { onPress: () => void; style?: object }) {
         }}
         style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
       >
-      {isGlassAvailable ? (
-        <GlassView
-          style={styles.fabGlassInner}
-          glassEffectStyle="clear"
-          isInteractive
-        >
-          <Plus size={24} color="#fff" />
-        </GlassView>
-      ) : (
-        <Plus size={24} color={colors.textOnAccent} />
-      )}
-    </AnimatedPressable>
+        {isGlassAvailable ? (
+          <GlassView
+            style={styles.fabGlassInner}
+            glassEffectStyle="clear"
+            isInteractive
+          >
+            <Plus size={24} color="#fff" />
+          </GlassView>
+        ) : (
+          <Plus size={24} color={colors.textOnAccent} />
+        )}
+      </AnimatedPressable>
     </Animated.View>
   );
 
