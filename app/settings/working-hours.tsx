@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Clock, ChevronRight } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { AppSwitch } from "../../src/components/ui/AppSwitch";
@@ -167,7 +166,6 @@ export default function WorkingHoursScreen() {
                 <AppSwitch
                   value={day.enabled}
                   onChange={(val) => {
-                    Haptics.selectionAsync();
                     handleToggle(day.day, val);
                   }}
                 />

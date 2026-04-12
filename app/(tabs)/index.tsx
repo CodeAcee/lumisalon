@@ -1,37 +1,8 @@
 import { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  TextInput,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, {
-  FadeInDown,
-  ZoomIn,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 import { router } from "expo-router";
-import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
-import {
-  Search,
-  User,
-  Plus,
-  Calendar,
-  Users,
-  SlidersHorizontal,
-  X,
-  MapPin,
-  ChevronDown,
-} from "lucide-react-native";
-import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { ProcedureCard } from "../../src/components/home/ProcedureCard";
@@ -40,61 +11,10 @@ import { ProcedureSkeleton } from "../../src/components/ui/SkeletonCard";
 import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { useAppStore, useAuthStore } from "../../src/store";
 import { format } from "date-fns";
-
-const isGlassAvailable = isGlassEffectAPIAvailable();
-
-function FAB({ onPress, style }: { onPress: () => void; style?: object }) {
-  const colors = useColors();
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const inner = (
-    <Animated.View entering={ZoomIn.delay(300).duration(400)}>
-      <AnimatedPressable
-        onPress={onPress}
-        onPressIn={() => {
-          scale.value = withSpring(0.9, { damping: 12 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 12 });
-        }}
-        style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
-      >
-        {isGlassAvailable ? (
-          <GlassView
-            style={styles.fabGlassInner}
-            glassEffectStyle="clear"
-            isInteractive
-          >
-            <Plus size={24} color="#fff" />
-          </GlassView>
-        ) : (
-          <Plus size={24} color={colors.textOnAccent} />
-        )}
-      </AnimatedPressable>
-    </Animated.View>
-  );
-
-  return inner;
-}
-
-const styles = StyleSheet.create({
-  fabGlass: {
-    backgroundColor: "transparent",
-    borderWidth: 0,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  fabGlassInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+import { FAB } from "../../src/components/home/FAB";
+import { HomeHeader } from "../../src/components/home/HomeHeader";
+import { HomeSearchBar } from "../../src/components/home/HomeSearchBar";
+import { StatsRow } from "../../src/components/home/StatsRow";
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -157,84 +77,27 @@ export default function HomeScreen() {
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={s.header}>
-        <Pressable
-          style={s.locationBtn}
-          onPress={() => setLocationSheetOpen(true)}
-        >
-          <MapPin size={14} color={colors.accent} />
-          <Text style={s.locationBtnText} numberOfLines={1}>
-            {activeLocation ? activeLocation.name : t("home.allLocations")}
-          </Text>
-          <ChevronDown size={14} color={colors.textSecondary} />
-        </Pressable>
+      <HomeHeader
+        activeLocationName={activeLocation?.name ?? null}
+        userAvatar={user?.avatar}
+        onLocationPress={() => setLocationSheetOpen(true)}
+        onAvatarPress={() => router.push("/profile/edit")}
+      />
 
-        <Pressable
-          onPress={() => router.push("/profile/edit")}
-          style={s.avatarBtn}
-        >
-          {user?.avatar ? (
-            <Image
-              source={{ uri: user.avatar }}
-              style={{ width: 36, height: 36, borderRadius: 18 }}
-            />
-          ) : (
-            <User size={18} color={colors.textSecondary} />
-          )}
-        </Pressable>
-      </View>
-
-      {/* Search */}
-      <View style={s.searchWrap}>
-        <View style={s.searchBar}>
-          <Search size={18} color={colors.textTertiary} />
-          <TextInput
-            value={homeSearch}
-            onChangeText={setHomeSearch}
-            placeholder={t("home.searchPlaceholder")}
-            placeholderTextColor={colors.textTertiary}
-            style={s.searchInput}
-            returnKeyType="search"
-          />
-          <Pressable
-            onPress={() => setFilterSheetOpen(true)}
-            hitSlop={8}
-            style={s.filterIconWrap}
-          >
-            <SlidersHorizontal size={18} color={colors.textSecondary} />
-            {activeFilterCount > 0 && (
-              <View style={s.filterBadge}>
-                <Text style={s.filterBadgeText}>{activeFilterCount}</Text>
-              </View>
-            )}
-          </Pressable>
-        </View>
-      </View>
+      <HomeSearchBar
+        value={homeSearch}
+        onChangeText={setHomeSearch}
+        placeholder={t("home.searchPlaceholder")}
+        activeFilterCount={activeFilterCount}
+        onFilterPress={() => setFilterSheetOpen(true)}
+      />
 
       <ScrollView
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={s.statsRow}>
-          <Animated.View
-            entering={FadeInDown.delay(50).duration(400)}
-            style={s.statCard}
-          >
-            <Calendar size={18} color={colors.accent} />
-            <Text style={s.statValue}>{todayCount}</Text>
-            <Text style={s.statLabel}>{t("home.today")}</Text>
-          </Animated.View>
-          <Animated.View
-            entering={FadeInDown.delay(150).duration(400)}
-            style={s.statCard}
-          >
-            <Users size={18} color={colors.accent} />
-            <Text style={s.statValue}>{mastersCount}</Text>
-            <Text style={s.statLabel}>{t("tabs.masters")}</Text>
-          </Animated.View>
-        </View>
+        <StatsRow todayCount={todayCount} mastersCount={mastersCount} />
 
         {/* Recent procedures */}
         <View style={s.sectionHeader}>
@@ -298,111 +161,11 @@ export default function HomeScreen() {
   );
 }
 
-function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
+function makeStyles(c: ReturnType<typeof useColors>, _isDark: boolean) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bgPrimary },
 
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-    },
-    locationBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      backgroundColor: c.bgCard,
-      borderRadius: BorderRadius.pill,
-      borderWidth: 1,
-      borderColor: c.border,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      flex: 1,
-      marginRight: 10,
-    },
-    locationBtnText: {
-      flex: 1,
-      fontSize: FontSize.body,
-      fontWeight: "600",
-      color: c.textPrimary,
-    },
-    avatarBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: c.bgChip,
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-
-    searchWrap: { paddingHorizontal: 16, paddingBottom: 12 },
-    searchBar: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: c.bgCard,
-      borderRadius: BorderRadius.xl,
-      height: 48,
-      paddingHorizontal: 16,
-      gap: 8,
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.75)",
-      shadowColor: c.accent,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 2,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: FontSize.body,
-      color: c.textPrimary,
-      height: "100%",
-    },
-    filterIconWrap: { position: "relative" },
-    filterBadge: {
-      position: "absolute",
-      top: -6,
-      right: -8,
-      minWidth: 16,
-      height: 16,
-      borderRadius: 8,
-      backgroundColor: c.accent,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 3,
-    },
-    filterBadgeText: { fontSize: 9, fontWeight: "700", color: c.textOnAccent },
-
     content: { paddingHorizontal: 20 },
-
-    statsRow: { flexDirection: "row", gap: 12, marginBottom: 24, marginTop: 4 },
-    statCard: {
-      flex: 1,
-      backgroundColor: c.bgCard,
-      borderRadius: BorderRadius.xl,
-      padding: 16,
-      alignItems: "center",
-      gap: 6,
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(255,255,255,0.8)",
-      shadowColor: c.accent,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.13,
-      shadowRadius: 18,
-      elevation: 4,
-    },
-    statValue: {
-      fontSize: FontSize.title,
-      fontWeight: "700",
-      color: c.textPrimary,
-    },
-    statLabel: { fontSize: FontSize.sm, color: c.textSecondary },
 
     sectionHeader: {
       flexDirection: "row",

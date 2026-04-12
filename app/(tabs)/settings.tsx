@@ -20,11 +20,12 @@ import {
   Bell,
   Globe,
 } from "lucide-react-native";
-import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
+import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Avatar } from "../../src/components/ui/Avatar";
 import { Image } from "expo-image";
 import { useAuthStore, useSettingsStore } from "../../src/store";
+import * as Haptics from "expo-haptics";
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -33,8 +34,17 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const themeMode = useSettingsStore((s) => s.themeMode);
+  const palette = useSettingsStore((s) => s.palette);
   const language = useSettingsStore((s) => s.language);
+
+  const PALETTE_LABELS: Record<string, string> = {
+    cream: "Cream",
+    noir: "Noir",
+    system: "System",
+    sky: "Wave",
+    fucsia: "Fucsía",
+    matcha: "Matcha",
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -47,6 +57,7 @@ export default function SettingsScreen() {
           style: "destructive",
           onPress: () => {
             signOut();
+            Haptics.selectionAsync();
             router.replace("/(auth)");
           },
         },
@@ -55,6 +66,7 @@ export default function SettingsScreen() {
   };
 
   const handleDelete = () => {
+    Haptics.selectionAsync();
     Alert.alert(
       t("settings.deleteConfirmTitle"),
       t("settings.deleteConfirmMessage"),
@@ -63,6 +75,12 @@ export default function SettingsScreen() {
         { text: t("common.delete"), style: "destructive" },
       ],
     );
+  };
+
+const handlePress = (screen: string) => {
+    Haptics.selectionAsync();
+
+    router.push(screen);
   };
 
   return (
@@ -80,7 +98,7 @@ export default function SettingsScreen() {
         {/* Profile card */}
         <Pressable
           style={styles.profileCard}
-          onPress={() => router.push("/profile/edit")}
+          onPress={() => handlePress("/profile/edit")}
         >
           {user?.avatar ? (
             <Image
@@ -114,17 +132,19 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Pressable
             style={styles.row}
-            onPress={() => router.push("/settings/appearance")}
+            onPress={() => handlePress("/settings/appearance")}
           >
             <Palette size={20} color={colors.textSecondary} />
             <Text style={styles.rowLabel}>{t("settings.appearance")}</Text>
-            <Text style={styles.rowValue}>{t(`appearance.${themeMode}`)}</Text>
+            <Text style={styles.rowValue}>
+              {PALETTE_LABELS[palette] ?? palette}
+            </Text>
             <ChevronRight size={18} color={colors.textTertiary} />
           </Pressable>
           <View style={styles.rowDivider} />
           <Pressable
             style={styles.row}
-            onPress={() => router.push("/settings/app-icon")}
+            onPress={() => handlePress("/settings/app-icon")}
           >
             <LayoutGrid size={20} color={colors.textSecondary} />
             <Text style={styles.rowLabel}>{t("settings.appIcon")}</Text>
@@ -134,7 +154,7 @@ export default function SettingsScreen() {
           <View style={styles.rowDivider} />
           <Pressable
             style={styles.row}
-            onPress={() => router.push("/settings/working-hours")}
+            onPress={() => handlePress("/settings/working-hours")}
           >
             <Clock size={20} color={colors.textSecondary} />
             <Text style={styles.rowLabel}>{t("settings.workingHours")}</Text>
@@ -144,7 +164,7 @@ export default function SettingsScreen() {
           <View style={styles.rowDivider} />
           <Pressable
             style={styles.row}
-            onPress={() => router.push("/settings/notifications")}
+            onPress={() => handlePress("/settings/notifications")}
           >
             <Bell size={20} color={colors.textSecondary} />
             <Text style={styles.rowLabel}>{t("settings.notifications")}</Text>
@@ -154,7 +174,7 @@ export default function SettingsScreen() {
           <View style={styles.rowDivider} />
           <Pressable
             style={styles.row}
-            onPress={() => router.push("/settings/language")}
+            onPress={() => handlePress("/settings/language")}
           >
             <Globe size={20} color={colors.textSecondary} />
             <Text style={styles.rowLabel}>{t("settings.language")}</Text>
@@ -165,7 +185,6 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        {/* Account */}
         <Text style={styles.sectionLabel}>{t("settings.accountSection")}</Text>
         <View style={styles.card}>
           <Pressable style={styles.row} onPress={handleLogout}>

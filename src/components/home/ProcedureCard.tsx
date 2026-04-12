@@ -15,10 +15,13 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const POSITION_FALLBACKS: Record<string, string> = {
   Hair: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80",
-  Nails: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80",
+  Nails:
+    "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80",
   Skin: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
-  Lashes: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&q=80",
-  default: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
+  Lashes:
+    "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&q=80",
+  default:
+    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
 };
 
 interface Props {
@@ -34,7 +37,12 @@ interface Props {
   onPress: () => void;
 }
 
-export function ProcedureCard({ proc, clientName, masterName, onPress }: Props) {
+export function ProcedureCard({
+  proc,
+  clientName,
+  masterName,
+  onPress,
+}: Props) {
   const colors = useColors();
   const s = styles(colors);
   const scale = useSharedValue(1);
@@ -50,8 +58,12 @@ export function ProcedureCard({ proc, clientName, masterName, onPress }: Props) 
   return (
     <AnimatedPressable
       onPress={onPress}
-      onPressIn={() => { scale.value = withSpring(0.97); }}
-      onPressOut={() => { scale.value = withSpring(1); }}
+      onPressIn={() => {
+        scale.value = withSpring(0.97);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1);
+      }}
       style={[s.card, animatedStyle]}
     >
       <View style={s.imgWrap}>
@@ -90,9 +102,11 @@ const styles = (c: ReturnType<typeof useColors>) =>
       borderRadius: BorderRadius.xl,
       overflow: "hidden",
       marginBottom: 16,
+      borderWidth: 1,
+      borderColor: c.border,
       shadowColor: "#2D2321",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.12,
       shadowRadius: 12,
       elevation: 2,
     },

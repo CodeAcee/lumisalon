@@ -10,16 +10,15 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Sun, Moon, Smartphone, Check } from "lucide-react-native";
+import { ArrowLeft, Check } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import type { PaletteKey } from "../../src/constants/theme";
 import { useSettingsStore } from "../../src/store/settings";
-import type { ThemeMode } from "../../src/store/settings";
 import { useTheme, useColors } from "../../src/theme/ThemeContext";
 
 const { width: W } = Dimensions.get("window");
-const SQUARE = Math.floor((W - 16 * 2 - 12) / 2);
+const SQUARE = Math.floor((W - 16 * 2 - 30) / 2);
 const BLOB = Math.floor(SQUARE * 0.72);
 
 type PaletteDef = {
@@ -37,37 +36,36 @@ const PALETTE_DEFS: PaletteDef[] = [
     textColor: "#5C3D2E",
   },
   {
+    key: "noir",
+    name: "Noir",
+    colors: ["#1A1614", "#332B28", "#D4A88C"],
+    textColor: "#F5F0ED",
+  },
+  {
+    key: "system",
+    name: "System",
+    colors: ["#F5E8DC", "#1A1614", "#D4A88C"],
+    textColor: "#5C3D2E",
+  },
+  {
+    key: "sky",
+    name: "Wave",
+    colors: ["#D8EAFA", "#C8DEEF", "#5B9BD9"],
+    textColor: "#0C1E3A",
+  },
+  {
     key: "fucsia",
     name: "Fucsía",
-    colors: ["#F9E0F5", "#E040B0", "#9C27B0"],
-    textColor: "#5D0A4F",
+    colors: ["#FADDEE", "#F5CCE4", "#D946A0"],
+    textColor: "#3A0828",
   },
   {
-    key: "light",
-    name: "Light",
-    colors: ["#EFF5FF", "#7EB8E8", "#3A7DC4"],
-    textColor: "#1A3F6F",
-  },
-  {
-    key: "dark",
-    name: "Dark",
-    colors: ["#1E1A18", "#4A3832", "#C49A7E"],
-    textColor: "#D4A88C",
-  },
-  {
-    key: "sage",
-    name: "Sage",
-    colors: ["#E5F2EA", "#5BA87A", "#2D6B4F"],
-    textColor: "#1A4030",
+    key: "matcha",
+    name: "Matcha",
+    colors: ["#F4F7EC", "#AECA80", "#6B8F3E"],
+    textColor: "#1E2E0E",
   },
 ];
-
-const THEME_MODES: Array<{ mode: ThemeMode; label: string; Icon: typeof Sun }> =
-  [
-    { mode: "light", label: "Light", Icon: Sun },
-    { mode: "dark", label: "Dark", Icon: Moon },
-    { mode: "system", label: "System", Icon: Smartphone },
-  ];
 
 // Static styles for palette squares (size-based, theme-independent)
 const sqStyles = StyleSheet.create({
@@ -126,9 +124,14 @@ function PaletteSquare({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  const handlePress = () => {
+    Haptics.selectionAsync();
+    onPress();
+  };
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={[
         sqStyles.square,
         isSelected && { borderWidth: 3, borderColor: def.colors[1] },
@@ -159,8 +162,6 @@ function PaletteSquare({
 
 export default function AppearanceScreen() {
   const insets = useSafeAreaInsets();
-  const themeMode = useSettingsStore((s) => s.themeMode);
-  const setThemeMode = useSettingsStore((s) => s.setThemeMode);
   const palette = useSettingsStore((s) => s.palette);
   const setPalette = useSettingsStore((s) => s.setPalette);
   const { colors } = useTheme();
@@ -189,82 +190,19 @@ export default function AppearanceScreen() {
         >
           <Text style={styles.sectionLabel}>{t("appearance.palette")}</Text>
           <View style={styles.palettesGrid}>
-            <View style={styles.paletteRow}>
-              {PALETTE_DEFS.slice(0, 2).map((def) => (
-                <PaletteSquare
-                  key={def.key}
-                  def={def}
-                  isSelected={palette === def.key}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setPalette(def.key);
-                  }}
-                />
-              ))}
-            </View>
-            <View style={styles.paletteRow}>
-              {PALETTE_DEFS.slice(2, 4).map((def) => (
-                <PaletteSquare
-                  key={def.key}
-                  def={def}
-                  isSelected={palette === def.key}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setPalette(def.key);
-                  }}
-                />
-              ))}
-            </View>
-            <View style={[styles.paletteRow, { justifyContent: "center" }]}>
-              <PaletteSquare
-                def={PALETTE_DEFS[4]}
-                isSelected={palette === PALETTE_DEFS[4].key}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setPalette(PALETTE_DEFS[4].key);
-                }}
-              />
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Theme mode section */}
-        <Animated.View
-          entering={FadeInDown.delay(120).duration(350)}
-          style={styles.section}
-        >
-          <Text style={styles.sectionLabel}>{t("appearance.mode")}</Text>
-          <View style={styles.modeRow}>
-            {THEME_MODES.map(({ mode, label, Icon }) => {
-              const isActive = themeMode === mode;
-              return (
-                <Pressable
-                  key={mode}
-                  style={[styles.modePill, isActive && styles.modePillActive]}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setThemeMode(mode);
-                  }}
-                >
-                  <Icon
-                    size={14}
-                    color={
-                      isActive ? colors.textOnAccent : colors.textSecondary
-                    }
+            {[0, 2, 4].map((start) => (
+              <View key={start} style={styles.paletteRow}>
+                {PALETTE_DEFS.slice(start, start + 2).map((def) => (
+                  <PaletteSquare
+                    key={def.key}
+                    def={def}
+                    isSelected={palette === def.key}
+                    onPress={() => setPalette(def.key)}
                   />
-                  <Text
-                    style={[
-                      styles.modePillText,
-                      isActive && styles.modePillTextActive,
-                    ]}
-                  >
-                    {t(`appearance.${mode}`)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                ))}
+              </View>
+            ))}
           </View>
-          <Text style={styles.hint}>{t("appearance.systemHint")}</Text>
         </Animated.View>
 
         <View style={{ height: 40 }} />
@@ -304,35 +242,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textTertiary,
       letterSpacing: 1.2,
     },
-    palettesGrid: { gap: 12 },
+    palettesGrid: { gap: 12, justifyContent: "center", alignItems: "center" },
     paletteRow: { flexDirection: "row", gap: 12 },
-    modeRow: { flexDirection: "row", gap: 8 },
-    modePill: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-      height: 44,
-      borderRadius: BorderRadius.xl,
-      backgroundColor: c.bgChip,
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    modePillActive: {
-      backgroundColor: c.accent,
-      borderColor: c.accent,
-    },
-    modePillText: {
-      fontSize: FontSize.sm,
-      fontWeight: "600",
-      color: c.textSecondary,
-    },
-    modePillTextActive: { color: c.textOnAccent },
-    hint: {
-      fontSize: FontSize.caption,
-      lineHeight: 20,
-      color: c.textSecondary,
-    },
   });
 }

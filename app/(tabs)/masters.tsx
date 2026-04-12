@@ -20,6 +20,7 @@ import { ListSkeleton } from "../../src/components/ui/SkeletonCard";
 import { useAppStore } from "../../src/store";
 import type { Master } from "../../src/types";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
 
 // Stable separator — defined outside so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
@@ -71,6 +72,11 @@ export default function MastersScreen() {
 
   const keyExtractor = useCallback((item: Master) => item.id, []);
 
+  const handlePress = () => {
+    Haptics.selectionAsync();
+    router.push("/master/create");
+  };
+
   return (
     <Pressable
       style={[s.container, { paddingTop: insets.top }]}
@@ -82,10 +88,7 @@ export default function MastersScreen() {
       >
         <Text style={s.title}>{t("masters.title")}</Text>
 
-        <Pressable
-          onPress={() => router.push("/master/create")}
-          style={[s.iconBtn, s.plusBtn]}
-        >
+        <Pressable onPress={handlePress} style={[s.iconBtn, s.plusBtn]}>
           {isGlassAvailable ? (
             <GlassView
               style={s.iconBtn}

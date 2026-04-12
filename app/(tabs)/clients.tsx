@@ -21,8 +21,8 @@ import { useAppStore } from "../../src/store";
 import type { Client } from "../../src/types";
 import { isGlassEffectAPIAvailable } from "expo-glass-effect/build/isGlassEffectAPIAvailable";
 import { GlassView } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
 
-// Stable separator — defined outside component so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
 const SEPARATOR_STYLE = { height: 10 };
 
@@ -71,6 +71,11 @@ export default function ClientsScreen() {
 
   const keyExtractor = useCallback((item: Client) => item.id, []);
 
+  const handlePress = () => {
+    Haptics.selectionAsync();
+    router.push("/client/create");
+  };
+
   return (
     <Pressable
       style={[s.container, { paddingTop: insets.top }]}
@@ -81,10 +86,7 @@ export default function ClientsScreen() {
         style={s.header}
       >
         <Text style={s.title}>{t("clients.title")}</Text>
-        <Pressable
-          onPress={() => router.push("/client/create")}
-          style={[s.iconBtn, s.plusBtn]}
-        >
+        <Pressable onPress={handlePress} style={[s.iconBtn, s.plusBtn]}>
           {isGlassAvailable ? (
             <GlassView
               style={s.iconBtn}

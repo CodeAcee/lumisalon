@@ -41,7 +41,11 @@ export function FilterSheet({ visible, onClose }: Props) {
   const { bottom } = useSafeAreaInsets();
   const { t } = useTranslation();
 
-  const masters = useAppStore((s) => s.masters);
+  const allMasters = useAppStore((s) => s.masters);
+  const activeLocationId = useAppStore((s) => s.activeLocationId);
+  const masters = activeLocationId
+    ? allMasters.filter((m) => m.locationIds?.includes(activeLocationId))
+    : allMasters;
   const procedureFilters = useAppStore((s) => s.procedureFilters);
   const setProcedureFilters = useAppStore((s) => s.setProcedureFilters);
   const setHomeSearch = useAppStore((s) => s.setHomeSearch);

@@ -11,7 +11,6 @@ import {
   BarChart3,
   Megaphone,
 } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { AppSwitch } from "../../src/components/ui/AppSwitch";
@@ -120,7 +119,6 @@ export default function NotificationsScreen() {
             <AppSwitch
               value={notifications.allowNotifications}
               onChange={() => {
-                Haptics.selectionAsync();
                 handleToggle("allowNotifications");
               }}
             />
@@ -162,7 +160,6 @@ export default function NotificationsScreen() {
                   <AppSwitch
                     value={notifications[item.key]}
                     onChange={() => {
-                      Haptics.selectionAsync();
                       handleToggle(item.key);
                     }}
                     disabled={!mainEnabled}

@@ -16,18 +16,22 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const themeMode = useSettingsStore((s) => s.themeMode);
   const palette = useSettingsStore((s) => s.palette);
   const systemScheme = useColorScheme();
 
-  const isDark =
-    themeMode === "dark" || (themeMode === "system" && systemScheme === "dark");
+  const theme = themes[palette ?? "cream"] ?? themes.cream;
+
+  // Derive isDark purely from the selected palette:
+  // - forceDark (noir) → always dark
+  // - followSystem (system) → follows device appearance
+  // - everything else → light
+  const isDark = theme.forceDark
+    ? true
+    : theme.followSystem
+      ? systemScheme === "dark"
+      : false;
 
   const base = isDark ? darkColors : lightColors;
-
-  // Resolve overrides: use dark-specific overrides when dark mode is active,
-  // falling back to the light overrides (which carry the accent colors)
-  const theme = themes[palette ?? "cream"] ?? themes.cream;
   const overrides = isDark ? { ...theme.light, ...theme.dark } : theme.light;
 
   const colors: ThemeColors = { ...base, ...overrides } as ThemeColors;

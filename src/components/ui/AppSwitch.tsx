@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useColors } from "../../theme/ThemeContext";
+import * as Haptics from "expo-haptics";
 
 interface AppSwitchProps {
   value?: boolean;
@@ -52,6 +53,8 @@ export function AppSwitch({
   }));
 
   const handlePress = () => {
+    Haptics.selectionAsync();
+
     if (!disabled && onChange) onChange(!value);
   };
 
