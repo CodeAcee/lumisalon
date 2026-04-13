@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  Alert,
   ScrollView,
   Keyboard,
   KeyboardAvoidingView,
@@ -72,15 +73,23 @@ export default function EditClientScreen() {
     );
   }
 
-  const onSubmit = (data: ClientFormData) => {
+  const [saving, setSaving] = useState(false);
+
+  const onSubmit = async (data: ClientFormData) => {
     Keyboard.dismiss();
-    updateClient(id, {
-      name: data.name,
-      phone: data.phone,
-      email: data.email || undefined,
-      locationId: selectedLocationId || undefined,
-    });
-    router.back();
+    setSaving(true);
+    try {
+      await updateClient(id, {
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        locationId: selectedLocationId || undefined,
+      });
+      router.back();
+    } catch (err: any) {
+      setSaving(false);
+      Alert.alert("Error", err?.message ?? "Failed to save. Please try again.");
+    }
   };
 
   return (
@@ -203,6 +212,7 @@ export default function EditClientScreen() {
           <Button
             title={t("common.save")}
             onPress={handleSubmit(onSubmit)}
+            loading={saving}
             icon={<Check size={18} color={colors.textOnAccent} />}
           />
         </BottomActionBar>

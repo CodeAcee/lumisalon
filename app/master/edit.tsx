@@ -39,6 +39,7 @@ import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { PhoneInput } from "../../src/components/ui/PhoneInput";
 import { useAppStore } from "../../src/store";
 import { masterSchema, type MasterFormData } from "../../src/lib/schemas";
+import { uploadImage, STORAGE_LIMITS } from "../../src/services/supabase/storage.service";
 import type { Position } from "../../src/types";
 
 /** Convert any stored phone to +380XXXXXXXXX so the Ukrainian schema passes. */
@@ -269,20 +270,32 @@ export default function EditMasterScreen() {
     });
   };
 
-  const onSubmit = (data: MasterFormData) => {
+  const [saving, setSaving] = useState(false);
+
+  const onSubmit = async (data: MasterFormData) => {
     if (selectedLocationIds.length === 0) {
       setLocationError(true);
       return;
     }
     Keyboard.dismiss();
-    updateMaster(id, {
-      name: data.name,
-      phone: data.phone || undefined,
-      positions: data.positions as Position[],
-      avatar: avatarUri,
-      locationIds: selectedLocationIds,
-    });
-    router.back();
+    setSaving(true);
+    try {
+      let remoteAvatar: string | undefined = avatarUri;
+      if (avatarUri && !avatarUri.startsWith("http")) {
+        remoteAvatar = await uploadImage(avatarUri, "masters", STORAGE_LIMITS.masterAvatar);
+      }
+      await updateMaster(id, {
+        name: data.name,
+        phone: data.phone || undefined,
+        positions: data.positions as Position[],
+        avatar: remoteAvatar,
+        locationIds: selectedLocationIds,
+      });
+      router.back();
+    } catch (err: any) {
+      setSaving(false);
+      Alert.alert("Error", err?.message ?? "Failed to save. Please try again.");
+    }
   };
 
   const initials = master.name
@@ -477,6 +490,7 @@ export default function EditMasterScreen() {
           <Button
             title={t("common.save")}
             onPress={handleSubmit(onSubmit)}
+            loading={saving}
             icon={<Check size={18} color={colors.textOnAccent} />}
           />
         </BottomActionBar>
@@ -652,7 +666,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     fieldLabel: { fontSize: FontSize.md, color: c.textTertiary },
     input: { flex: 1, fontSize: FontSize.md, color: c.textPrimary },
-    errorText: { fontSize: FontSize.sm, color: c.danger, marginLeft: 4 },
+    _errorTextInline: { fontSize: FontSize.sm, color: c.danger, marginLeft: 4 },
     positionsWrap: {
       flexDirection: "row",
       flexWrap: "wrap",

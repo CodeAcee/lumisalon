@@ -8,12 +8,12 @@ import {
   Platform,
   TextInput,
   Keyboard,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   User,
-  Phone,
   Mail,
   Lock,
   ArrowLeft,
@@ -24,11 +24,18 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
+import { PhoneInput } from "../../src/components/ui/PhoneInput";
 import { useAuthStore, useUIStore } from "../../src/store";
 import { signUpSchema, type SignUpFormData } from "../../src/lib/schemas";
+import { supabase } from "../../src/lib/supabase";
+import { supabaseAuth } from "../../src/services/supabase/auth.service";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen() {
   const colors = useColors();
@@ -45,6 +52,7 @@ export default function SignUpScreen() {
     control,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -56,21 +64,56 @@ export default function SignUpScreen() {
     },
   });
 
-  const onSubmit = (data: SignUpFormData) => {
+  const phoneValue = watch("phone");
+
+  const onSubmit = async (data: SignUpFormData) => {
     Keyboard.dismiss();
     setLoading(true);
-    // Simulate API call - replace with authApi.signUp(data) when backend ready
-    setTimeout(() => {
-      signIn(
-        { id: "1", name: data.name, email: data.email, phone: data.phone },
-        {
-          accessToken: "mock-token",
-          refreshToken: "mock-refresh",
-          expiresIn: 3600,
-        },
+    try {
+      const { user, session } = await supabaseAuth.signUp(
+        data.email,
+        data.password,
+        { name: data.name, phone: data.phone },
       );
-      router.replace("/(tabs)");
-    }, 1200);
+      if (!user) throw new Error("Registration failed");
+
+      if (session) {
+        const profile = await supabaseAuth.getProfile(
+          user.id,
+          user.email ?? "",
+        );
+        signIn(profile);
+        router.replace("/(tabs)");
+      } else {
+        setLoading(false);
+        Alert.alert(
+          t("signup.confirmEmail"),
+          t("signup.confirmEmailMessage"),
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      }
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert(
+        t("common.error"),
+        err?.message ?? t("signup.registrationFailed"),
+      );
+    }
+  };
+
+  const onGoogleSignUp = async () => {
+    const redirectUri = makeRedirectUri({ scheme: "lumisalon" });
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: redirectUri },
+    });
+    if (error) {
+      Alert.alert(t("common.error"), error.message);
+      return;
+    }
+    if (data.url) {
+      await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+    }
   };
 
   return (
@@ -91,19 +134,34 @@ export default function SignUpScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <Text style={styles.title}>Join LumiSalon</Text>
           <Text style={styles.subtitle}>{t("signup.subtitle")}</Text>
 
-          <View style={{ height: 24 }} />
+          <View style={{ height: 28 }} />
 
-          {/* Name */}
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
-                <View style={[styles.field, errors.name && styles.fieldError]}>
+          {/* Personal info card */}
+          <Text style={styles.sectionLabel}>
+            {t("signup.personalInfo", "PERSONAL INFO").toUpperCase()}
+          </Text>
+          <View
+            style={[
+              styles.card,
+              (errors.name || errors.email) && styles.cardError,
+            ]}
+          >
+            {/* Name */}
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View
+                  style={[
+                    styles.field,
+                    errors.name && styles.fieldError,
+                  ]}
+                >
                   <User size={18} color={colors.textTertiary} />
                   <TextInput
                     placeholder={t("signup.fullName")}
@@ -112,47 +170,28 @@ export default function SignUpScreen() {
                     onBlur={onBlur}
                     placeholderTextColor={colors.textTertiary}
                     style={styles.input}
+                    autoFocus
                   />
                 </View>
-                {errors.name && (
-                  <Text style={styles.errorText}>{errors.name.message}</Text>
-                )}
-              </View>
+              )}
+            />
+            {errors.name && (
+              <Text style={styles.errorText}>{errors.name.message}</Text>
             )}
-          />
 
-          {/* Phone */}
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
-                <View style={[styles.field, errors.phone && styles.fieldError]}>
-                  <Phone size={18} color={colors.textTertiary} />
-                  <TextInput
-                    placeholder={t("signup.phonePlaceholder")}
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="phone-pad"
-                    placeholderTextColor={colors.textTertiary}
-                    style={styles.input}
-                  />
-                </View>
-                {errors.phone && (
-                  <Text style={styles.errorText}>{errors.phone.message}</Text>
-                )}
-              </View>
-            )}
-          />
+            <View style={styles.divider} />
 
-          {/* Email */}
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
-                <View style={[styles.field, errors.email && styles.fieldError]}>
+            {/* Email */}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View
+                  style={[
+                    styles.field,
+                    errors.email && styles.fieldError,
+                  ]}
+                >
                   <Mail size={18} color={colors.textTertiary} />
                   <TextInput
                     placeholder={t("signup.emailPlaceholder")}
@@ -165,21 +204,50 @@ export default function SignUpScreen() {
                     style={styles.input}
                   />
                 </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email.message}</Text>
-                )}
-              </View>
+              )}
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
             )}
-          />
+          </View>
 
-          {/* Password */}
+          {/* Phone */}
+          <Text style={styles.sectionLabel}>
+            {t("common.phone", "PHONE").toUpperCase()}
+          </Text>
           <Controller
             control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
+            name="phone"
+            render={({ field: { onChange, onBlur } }) => (
+              <PhoneInput
+                value={phoneValue}
+                onChange={onChange}
+                onBlur={onBlur}
+                hasError={!!errors.phone}
+              />
+            )}
+          />
+          {errors.phone && (
+            <Text style={[styles.errorText, { marginTop: 4 }]}>
+              {errors.phone.message}
+            </Text>
+          )}
+
+          {/* Password card */}
+          <Text style={[styles.sectionLabel, { marginTop: 4 }]}>
+            {t("signup.passwordSection", "PASSWORD").toUpperCase()}
+          </Text>
+          <View style={styles.card}>
+            {/* Password */}
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
                 <View
-                  style={[styles.field, errors.password && styles.fieldError]}
+                  style={[
+                    styles.field,
+                    errors.password && styles.fieldError,
+                  ]}
                 >
                   <Lock size={18} color={colors.textTertiary} />
                   <TextInput
@@ -191,7 +259,7 @@ export default function SignUpScreen() {
                     placeholderTextColor={colors.textTertiary}
                     style={styles.input}
                   />
-                  <Pressable onPress={() => togglePassword()}>
+                  <Pressable onPress={togglePassword} hitSlop={8}>
                     {showPassword ? (
                       <EyeOff size={18} color={colors.textTertiary} />
                     ) : (
@@ -199,21 +267,19 @@ export default function SignUpScreen() {
                     )}
                   </Pressable>
                 </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>
-                    {errors.password.message}
-                  </Text>
-                )}
-              </View>
+              )}
+            />
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password.message}</Text>
             )}
-          />
 
-          {/* Confirm Password */}
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View>
+            <View style={styles.divider} />
+
+            {/* Confirm Password */}
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
                 <View
                   style={[
                     styles.field,
@@ -231,14 +297,14 @@ export default function SignUpScreen() {
                     style={styles.input}
                   />
                 </View>
-                {errors.confirmPassword && (
-                  <Text style={styles.errorText}>
-                    {errors.confirmPassword.message}
-                  </Text>
-                )}
-              </View>
+              )}
+            />
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>
+                {errors.confirmPassword.message}
+              </Text>
             )}
-          />
+          </View>
 
           <View style={{ height: 24 }} />
 
@@ -256,7 +322,7 @@ export default function SignUpScreen() {
             <View style={styles.orLine} />
           </View>
 
-          <Pressable style={styles.googleBtn}>
+          <Pressable style={styles.googleBtn} onPress={onGoogleSignUp}>
             <Text style={styles.googleG}>G</Text>
             <Text style={styles.googleText}>
               {t("login.continueWithGoogle")}
@@ -304,8 +370,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textPrimary,
     },
     content: {
-      paddingHorizontal: 24,
-      paddingTop: 20,
+      paddingHorizontal: 20,
+      paddingTop: 16,
       paddingBottom: 40,
     },
     title: {
@@ -318,20 +384,39 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textSecondary,
       marginTop: 4,
     },
+    sectionLabel: {
+      fontSize: FontSize.xs,
+      fontWeight: "700",
+      color: c.textTertiary,
+      letterSpacing: 1,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    card: {
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+      marginBottom: 16,
+    },
+    cardError: {
+      borderColor: c.danger,
+    },
     field: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgChip,
-      borderRadius: BorderRadius.lg,
-      height: 52,
       paddingHorizontal: 16,
-      gap: 10,
-      marginBottom: 4,
-      borderWidth: 1,
-      borderColor: "transparent",
+      paddingVertical: 14,
+      gap: 12,
     },
     fieldError: {
-      borderColor: c.danger,
+      backgroundColor: c.dangerBg,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.border,
+      marginLeft: 46,
     },
     input: {
       flex: 1,
@@ -341,8 +426,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     errorText: {
       fontSize: FontSize.sm,
       color: c.danger,
-      marginLeft: 4,
-      marginBottom: 8,
+      marginLeft: 16,
+      marginBottom: 10,
     },
     orRow: {
       flexDirection: "row",

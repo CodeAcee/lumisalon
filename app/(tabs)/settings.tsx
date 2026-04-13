@@ -55,9 +55,11 @@ export default function SettingsScreen() {
         {
           text: t("settings.logOut"),
           style: "destructive",
-          onPress: () => {
-            signOut();
+          onPress: async () => {
             Haptics.selectionAsync();
+            const { supabase } = await import("../../src/lib/supabase");
+            await supabase.auth.signOut();
+            signOut();
             router.replace("/(auth)");
           },
         },

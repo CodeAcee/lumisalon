@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, Plus, X } from "lucide-react-native";
+import { Search, Plus, X, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { FlashList } from "@shopify/flash-list";
+import { useFocusEffect } from "expo-router";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { ClientCard } from "../../src/components/ui/ClientCard";
 import { ListSkeleton } from "../../src/components/ui/SkeletonCard";
+import { Button } from "../../src/components/ui/Button";
 import { useAppStore } from "../../src/store";
 import type { Client } from "../../src/types";
 import { isGlassEffectAPIAvailable } from "expo-glass-effect/build/isGlassEffectAPIAvailable";
@@ -37,20 +39,38 @@ export default function ClientsScreen() {
   const clientSearch = useAppStore((state) => state.clientSearch);
   const setClientSearch = useAppStore((state) => state.setClientSearch);
   const getFilteredClients = useAppStore((state) => state.getFilteredClients);
-  const allClients = useAppStore((state) => state.clients);
+  const dataLoaded = useAppStore((state) => state.dataLoaded);
+  useAppStore((state) => state.clients);
   const locations = useAppStore((state) => state.locations);
 
+  const listRef = useRef<FlashList<Client>>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, []),
+  );
+
   const filtered = getFilteredClients();
-  const isInitialLoad = allClients.length === 0 && !clientSearch;
+  const isInitialLoad = !dataLoaded;
 
   // Stable empty component
   const ListEmpty = useMemo(
     () => (
-      <View style={s.emptyCard}>
-        <Text style={s.emptyText}>{t("clients.noClients")}</Text>
+      <View style={s.emptyState}>
+        <View style={s.emptyIconWrap}>
+          <Users size={32} color={colors.accent} />
+        </View>
+        <Text style={s.emptyTitle}>{t("clients.noClients")}</Text>
+        <Text style={s.emptyHint}>{t("clients.noClientsHint")}</Text>
+        <Button
+          title={t("clients.addClient")}
+          onPress={() => router.push("/client/create")}
+          icon={<Plus size={16} color={colors.textOnAccent} />}
+        />
       </View>
     ),
-    [s, t],
+    [s, t, colors],
   );
 
   const renderClient = useCallback(
@@ -130,9 +150,11 @@ export default function ClientsScreen() {
         </View>
       ) : (
         <FlashList
+          ref={listRef}
           data={filtered}
           renderItem={renderClient}
           keyExtractor={keyExtractor}
+          estimatedItemSize={80}
           ItemSeparatorComponent={ItemSeparator}
           ListEmptyComponent={ListEmpty}
           contentContainerStyle={s.list}
@@ -190,14 +212,34 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingTop: 4,
       paddingBottom: 100,
     },
-    emptyCard: {
-      backgroundColor: c.bgCard,
-      borderRadius: BorderRadius.lg,
-      padding: 32,
+    emptyState: {
+      flex: 1,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: c.border,
+      justifyContent: "center",
+      paddingHorizontal: 40,
+      paddingVertical: 60,
+      gap: 12,
     },
-    emptyText: { fontSize: FontSize.md, color: c.textTertiary },
+    emptyIconWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: c.bgChip,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    emptyTitle: {
+      fontSize: FontSize.title,
+      fontWeight: "700",
+      color: c.textPrimary,
+      textAlign: "center",
+    },
+    emptyHint: {
+      fontSize: FontSize.body,
+      color: c.textTertiary,
+      textAlign: "center",
+      marginBottom: 8,
+    },
   });
 }

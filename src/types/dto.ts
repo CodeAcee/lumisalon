@@ -177,7 +177,7 @@ export interface ProcedureFilters {
 }
 
 export interface ClientFilters {
-  tag?: ClientTag;
+  tag?: string;
   search?: string;
 }
 

@@ -34,7 +34,7 @@ export const lightColors = {
 export const darkColors = {
   accent: "#D4A88C",
   accentDark: "#B8896E",
-  accentLight: "#E8C8B4",
+  accentLight: "#3D2B22",
   bgPrimary: "#1A1614",
   bgCard: "#241E1C",
   bgChip: "#332B28",

@@ -8,6 +8,7 @@ import {
   TextInput,
   ImageBackground,
   Keyboard,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,20 +16,28 @@ import { Mail, Lock, Eye, EyeOff, LogIn, Flower2 } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
-import { useColors } from "../../src/theme/ThemeContext";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { FontSize, BorderRadius } from "../../src/constants/theme";
+import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
 import { useAuthStore, useUIStore } from "../../src/store";
+import { useAppStore } from "../../src/store/app";
 import { loginSchema, type LoginFormData } from "../../src/lib/schemas";
+import { supabase } from "../../src/lib/supabase";
+import { supabaseAuth } from "../../src/services/supabase/auth.service";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
-  const colors = useColors();
-  const styles = makeStyles(colors);
+  const { colors, isDark } = useTheme();
+  const styles = makeStyles(colors, isDark);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const signIn = useAuthStore((s) => s.signIn);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setLoading = useAuthStore((s) => s.setLoading);
+  const loadAllData = useAppStore((s) => s.loadAllData);
   const passwordVisible = useUIStore((s) => s.loginPasswordVisible);
   const togglePassword = useUIStore((s) => s.toggleLoginPassword);
 
@@ -41,26 +50,35 @@ export default function LoginScreen() {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
     Keyboard.dismiss();
     setLoading(true);
-    // Simulate API call - replace with authApi.login(data) when backend is ready
-    setTimeout(() => {
-      signIn(
-        {
-          id: "1",
-          name: "Admin User",
-          email: data.email,
-          phone: "+1 (555) 000-0000",
-        },
-        {
-          accessToken: "mock-access-token",
-          refreshToken: "mock-refresh-token",
-          expiresIn: 3600,
-        },
-      );
+    try {
+      const { user, session } = await supabaseAuth.signIn(data.email, data.password);
+      if (!session || !user) throw new Error("Login failed");
+      const profile = await supabaseAuth.getProfile(user.id, user.email ?? "");
+      signIn(profile);
+      await loadAllData();
       router.replace("/(tabs)");
-    }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert(t("common.error"), err?.message ?? t("login.invalidCredentials"));
+    }
+  };
+
+  const onGoogleLogin = async () => {
+    const redirectUri = makeRedirectUri({ scheme: "lumisalon" });
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: redirectUri },
+    });
+    if (error) {
+      Alert.alert(t("common.error"), error.message);
+      return;
+    }
+    if (data.url) {
+      await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+    }
   };
 
   return (
@@ -86,7 +104,6 @@ export default function LoginScreen() {
         style={styles.formWrapper}
       >
         <View style={styles.formCard}>
-          {/* Specular top edge highlight */}
           <View pointerEvents="none" style={styles.formCardHighlight} />
           <Pressable style={styles.formCardInner} onPress={Keyboard.dismiss}>
             <Text style={styles.welcomeTitle}>{t("login.welcomeBack")}</Text>
@@ -94,17 +111,19 @@ export default function LoginScreen() {
 
             <View style={{ height: 20 }} />
 
-            {/* Email */}
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View>
+            {/* Email + Password card */}
+            <View
+              style={[
+                styles.card,
+                (errors.email || errors.password) && styles.cardError,
+              ]}
+            >
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
                   <View
-                    style={[
-                      styles.fieldContainer,
-                      errors.email && styles.fieldError,
-                    ]}
+                    style={[styles.field, errors.email && styles.fieldError]}
                   >
                     <Mail size={18} color={colors.textTertiary} />
                     <TextInput
@@ -118,24 +137,20 @@ export default function LoginScreen() {
                       style={styles.fieldInput}
                     />
                   </View>
-                  {errors.email && (
-                    <Text style={styles.errorText}>{errors.email.message}</Text>
-                  )}
-                </View>
+                )}
+              />
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email.message}</Text>
               )}
-            />
 
-            {/* Password */}
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View>
+              <View style={styles.divider} />
+
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
                   <View
-                    style={[
-                      styles.fieldContainer,
-                      errors.password && styles.fieldError,
-                    ]}
+                    style={[styles.field, errors.password && styles.fieldError]}
                   >
                     <Lock size={18} color={colors.textTertiary} />
                     <TextInput
@@ -155,14 +170,12 @@ export default function LoginScreen() {
                       )}
                     </Pressable>
                   </View>
-                  {errors.password && (
-                    <Text style={styles.errorText}>
-                      {errors.password.message}
-                    </Text>
-                  )}
-                </View>
+                )}
+              />
+              {errors.password && (
+                <Text style={styles.errorText}>{errors.password.message}</Text>
               )}
-            />
+            </View>
 
             {/* Forgot password */}
             <Pressable
@@ -188,7 +201,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Google button */}
-            <Pressable style={styles.googleBtn}>
+            <Pressable style={styles.googleBtn} onPress={onGoogleLogin}>
               <Text style={styles.googleG}>G</Text>
               <Text style={styles.googleText}>
                 {t("login.continueWithGoogle")}
@@ -209,7 +222,7 @@ export default function LoginScreen() {
   );
 }
 
-function makeStyles(c: ReturnType<typeof useColors>) {
+function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -229,13 +242,15 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: "rgba(212, 168, 140, 0.85)",
+      backgroundColor: isDark
+        ? "rgba(26, 22, 20, 0.55)"
+        : "rgba(212, 168, 140, 0.82)",
     },
     logoBox: {
       width: 72,
       height: 72,
       borderRadius: 20,
-      backgroundColor: "rgba(255,255,255,0.30)",
+      backgroundColor: "rgba(255,255,255,0.20)",
       alignItems: "center",
       justifyContent: "center",
     },
@@ -246,7 +261,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     tagline: {
       fontSize: 15,
-      color: "rgba(255,255,255,0.6)",
+      color: "rgba(255,255,255,0.7)",
     },
     formWrapper: {
       flex: 1,
@@ -265,7 +280,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       left: 32,
       right: 32,
       height: StyleSheet.hairlineWidth * 2,
-      backgroundColor: "rgba(255,255,255,0.85)",
+      backgroundColor: isDark
+        ? "rgba(255,255,255,0.12)"
+        : "rgba(255,255,255,0.85)",
       zIndex: 10,
     },
     formCardInner: {
@@ -283,20 +300,31 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textSecondary,
       marginTop: 4,
     },
-    fieldContainer: {
+    card: {
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+      marginBottom: 4,
+    },
+    cardError: {
+      borderColor: c.danger,
+    },
+    field: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgChip,
-      borderRadius: BorderRadius.lg,
-      height: 52,
       paddingHorizontal: 16,
-      gap: 10,
-      marginBottom: 4,
-      borderWidth: 1,
-      borderColor: "transparent",
+      paddingVertical: 14,
+      gap: 12,
     },
     fieldError: {
-      borderColor: c.danger,
+      backgroundColor: c.dangerBg,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.border,
+      marginLeft: 46,
     },
     fieldInput: {
       flex: 1,
@@ -306,8 +334,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     errorText: {
       fontSize: FontSize.sm,
       color: c.danger,
-      marginLeft: 4,
-      marginBottom: 8,
+      marginLeft: 16,
+      marginBottom: 10,
     },
     forgotRow: {
       alignItems: "flex-end",

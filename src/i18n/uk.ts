@@ -1,3 +1,5 @@
+import { create } from "zustand";
+
 const uk = {
   // ─── Common ───────────────────────────────────────────────────────────────
   common: {
@@ -50,6 +52,7 @@ const uk = {
     continueWithGoogle: "Продовжити через Google",
     noAccount: "Немає облікового запису?",
     signUp: "Зареєструватись",
+    invalidCredentials: "Невірний email або пароль.",
   },
 
   // ─── Auth – Sign Up ───────────────────────────────────────────────────────
@@ -64,6 +67,10 @@ const uk = {
     createAccount: "Створити акаунт",
     alreadyHaveAccount: "Вже є акаунт?",
     signIn: "Увійти",
+    confirmEmail: "Підтвердіть email",
+    confirmEmailMessage:
+      "Ми надіслали посилання підтвердження на вашу пошту. Будь ласка, підтвердіть акаунт перед входом.",
+    registrationFailed: "Реєстрація не вдалася. Спробуйте ще раз.",
   },
 
   // ─── Auth – Forgot Password ───────────────────────────────────────────────
@@ -78,6 +85,7 @@ const uk = {
     emailSentSubtitle:
       "Ми надіслали посилання для скидання пароля на вашу електронну пошту.",
     backToLogin: "Назад до входу",
+    sendFailed: "Не вдалося надіслати посилання. Спробуйте ще раз.",
   },
 
   // ─── Home ─────────────────────────────────────────────────────────────────
@@ -90,6 +98,7 @@ const uk = {
     procedures: "процедур",
     clients: "клієнтів",
     noProcedures: "Процедур ще немає",
+    noProceduresHint: "Натисніть + щоб записати першу процедуру",
     addFirstProcedure: "Натисніть + щоб додати першу процедуру",
     filterByLocation: "Фільтр за локацією",
     recentProcedures: "Останні процедури",
@@ -99,7 +108,8 @@ const uk = {
   masters: {
     title: "Майстри",
     searchPlaceholder: "Пошук майстрів...",
-    noMasters: "Майстрів не знайдено",
+    noMasters: "Майстрів ще немає",
+    noMastersHint: "Додайте першого майстра щоб розпочати",
     addMaster: "Додати майстра",
     newMaster: "Новий майстер",
   },
@@ -108,7 +118,8 @@ const uk = {
   clients: {
     title: "Клієнти",
     searchPlaceholder: "Пошук клієнтів...",
-    noClients: "Клієнтів не знайдено",
+    noClients: "Клієнтів ще немає",
+    noClientsHint: "Додайте першого клієнта щоб розпочати",
     addClient: "Додати клієнта",
     newClient: "Новий клієнт",
   },
@@ -293,6 +304,7 @@ const uk = {
   procedureForm: {
     newTitle: "Додати процедуру",
     editTitle: "Редагувати процедуру",
+    createTitle: "Створити процедуру",
     client: "Клієнт",
     master: "Майстер",
     location: "Локація",

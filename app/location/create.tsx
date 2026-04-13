@@ -28,6 +28,7 @@ import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { Button } from "../../src/components/ui/Button";
 import { BottomActionBar } from "../../src/components/ui/BottomActionBar";
 import { useAppStore } from "../../src/store";
+import { uploadImage, STORAGE_LIMITS } from "../../src/services/supabase/storage.service";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80";
@@ -38,18 +39,18 @@ export default function CreateLocationScreen() {
   const addLocation = useAppStore((s) => s.addLocation);
   const { t } = useTranslation();
 
+  // ── state ─────────────────────────────────────────────────────────────────
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [imageUri, setImageUri] = useState<string | undefined>();
   const [nameError, setNameError] = useState("");
+  const [saving, setSaving] = useState(false);
 
+  // ── image picker ──────────────────────────────────────────────────────────
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Allow photo library access to add a location photo.",
-      );
+      Alert.alert("Permission required", "Allow photo library access to add a location photo.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -64,10 +65,7 @@ export default function CreateLocationScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Allow camera access to take a location photo.",
-      );
+      Alert.alert("Permission required", "Allow camera access to take a location photo.");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -83,32 +81,40 @@ export default function CreateLocationScreen() {
       { text: "Take Photo", onPress: takePhoto },
       { text: "Choose from Library", onPress: pickImage },
       ...(imageUri
-        ? [
-            {
-              text: "Remove",
-              style: "destructive" as const,
-              onPress: () => setImageUri(undefined),
-            },
-          ]
+        ? [{ text: "Remove", style: "destructive" as const, onPress: () => setImageUri(undefined) }]
         : []),
       { text: "Cancel", style: "cancel" },
     ]);
   };
 
-  const handleSave = () => {
+  // ── save ──────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
     Keyboard.dismiss();
     if (!name.trim()) {
       setNameError("Location name is required");
       return;
     }
     setNameError("");
-    addLocation({
-      id: `loc_${Date.now()}`,
-      name: name.trim(),
-      address: address.trim(),
-      image: imageUri,
-    });
-    router.back();
+    setSaving(true);
+    try {
+      let remoteImage: string | undefined;
+      if (imageUri) {
+        if (imageUri.startsWith("http")) {
+          remoteImage = imageUri;
+        } else {
+          remoteImage = await uploadImage(imageUri, "locations", STORAGE_LIMITS.locationImage);
+        }
+      }
+      await addLocation({
+        name: name.trim(),
+        address: address.trim(),
+        image: remoteImage,
+      });
+      router.back();
+    } catch (err: any) {
+      setSaving(false);
+      Alert.alert("Error saving location", err?.message ?? "Please try again.");
+    }
   };
 
   return (
@@ -139,10 +145,7 @@ export default function CreateLocationScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Location image */}
-          <Pressable
-            onPress={showImageOptions}
-            style={styles(colors).imagePicker}
-          >
+          <Pressable onPress={showImageOptions} style={styles(colors).imagePicker}>
             <Image
               source={{ uri: imageUri ?? PLACEHOLDER }}
               style={StyleSheet.absoluteFill}
@@ -163,21 +166,13 @@ export default function CreateLocationScreen() {
           <Text style={styles(colors).sectionLabel}>
             {t("locationForm.name").toUpperCase()}
           </Text>
-          <View
-            style={[
-              styles(colors).formCard,
-              nameError ? styles(colors).cardError : null,
-            ]}
-          >
+          <View style={[styles(colors).formCard, nameError ? styles(colors).cardError : null]}>
             <View style={styles(colors).field}>
               <Building2 size={18} color={colors.textTertiary} />
               <TextInput
                 placeholder={t("locationForm.newTitle")}
                 value={name}
-                onChangeText={(t) => {
-                  setName(t);
-                  setNameError("");
-                }}
+                onChangeText={(v) => { setName(v); setNameError(""); }}
                 placeholderTextColor={colors.textTertiary}
                 style={styles(colors).input}
                 autoFocus
@@ -210,6 +205,7 @@ export default function CreateLocationScreen() {
           <Button
             title={t("locationForm.save")}
             onPress={handleSave}
+            loading={saving}
             icon={<Check size={18} color={colors.textOnAccent} />}
           />
         </BottomActionBar>
@@ -218,7 +214,6 @@ export default function CreateLocationScreen() {
   );
 }
 
-// Using a function to build styles (avoids re-creating hook-derived styles on every render)
 const styles = (c: ReturnType<typeof useColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bgPrimary },
@@ -229,24 +224,11 @@ const styles = (c: ReturnType<typeof useColors>) =>
       height: 56,
       paddingHorizontal: 16,
     },
-    backBtn: {
-      width: 40,
-      height: 40,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headerTitle: {
-      fontSize: FontSize.lg,
-      fontWeight: "700",
-      color: c.textPrimary,
-    },
+    backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+    headerTitle: { fontSize: FontSize.lg, fontWeight: "700", color: c.textPrimary },
     divider: { height: 1, backgroundColor: c.border },
     content: { gap: 12, paddingBottom: 120 },
-    imagePicker: {
-      height: 200,
-      backgroundColor: c.bgChip,
-      overflow: "hidden",
-    },
+    imagePicker: { height: 200, backgroundColor: c.bgChip, overflow: "hidden" },
     imageOverlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: "rgba(0,0,0,0.25)",
@@ -288,15 +270,5 @@ const styles = (c: ReturnType<typeof useColors>) =>
       gap: 12,
     },
     input: { flex: 1, fontSize: FontSize.md, color: c.textPrimary },
-    errorText: {
-      fontSize: FontSize.sm,
-      color: c.danger,
-      marginHorizontal: 20,
-      marginTop: -4,
-    },
-    bottomBar: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      backgroundColor: c.bgPrimary,
-    },
+    errorText: { fontSize: FontSize.sm, color: c.danger, marginHorizontal: 20, marginTop: -4 },
   });

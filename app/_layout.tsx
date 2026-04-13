@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -14,6 +14,10 @@ import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { scheduleWorkingHourNotifications } from "../src/lib/workingHoursNotifications";
 import { useSettingsStore } from "../src/store/settings";
+import { useAuthStore } from "../src/store/auth";
+import { useAppStore } from "../src/store/app";
+import { supabase } from "../src/lib/supabase";
+import { supabaseAuth } from "../src/services/supabase/auth.service";
 import "../src/i18n";
 import i18n from "../src/i18n";
 
@@ -131,16 +135,54 @@ function AppShell() {
 }
 
 export default function RootLayout() {
+  const signIn = useAuthStore((s) => s.signIn);
+  const signOut = useAuthStore((s) => s.signOut);
+  const loadAllData = useAppStore((s) => s.loadAllData);
+
   useEffect(() => {
     SplashScreen.hideAsync();
-    // Restore scheduled working-hours notifications on each app launch
+
     const { workingHours, notifications, language } =
       useSettingsStore.getState();
     const enabled =
       notifications.allowNotifications && notifications.appointmentReminders;
     scheduleWorkingHourNotifications(workingHours, enabled);
-    // Apply persisted language
     i18n.changeLanguage(language ?? "en");
+
+    // Restore existing Supabase session on app start
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await supabaseAuth.getProfile(
+          session.user.id,
+          session.user.email ?? "",
+        );
+        signIn(profile);
+        await loadAllData();
+      } else {
+        // No real Supabase session — clear any stale Zustand auth state
+        signOut();
+      }
+    });
+
+    // Listen to auth state changes (login / logout / token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          const profile = await supabaseAuth.getProfile(
+            session.user.id,
+            session.user.email ?? "",
+          );
+          signIn(profile);
+          await loadAllData();
+          router.replace("/(tabs)");
+        } else if (event === "SIGNED_OUT") {
+          signOut();
+          router.replace("/(auth)");
+        }
+      },
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (

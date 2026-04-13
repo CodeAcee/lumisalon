@@ -60,7 +60,13 @@ export function LocationSheet({
   if (!visible) return null;
 
   return (
-    <AppSheet snapPoints={["60%"]} portal={portal} index={0} onClose={onClose}>
+    <AppSheet
+      snapPoints={["60%"]}
+      portal={portal}
+      enableDynamicSizing={false}
+      index={0}
+      onClose={onClose}
+    >
       <View style={s.header}>
         <Text style={s.title}>
           {title === "Select Location"

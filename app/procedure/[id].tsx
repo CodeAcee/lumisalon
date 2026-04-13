@@ -47,6 +47,7 @@ import { PositionBadge } from "../../src/components/ui/PositionBadge";
 import { formatUkrainianPhone } from "../../src/components/ui/PhoneInput";
 import { PhotoSkeleton } from "../../src/components/ui/SkeletonCard";
 import { useAppStore, useUIStore } from "../../src/store";
+import { isRemoteUri } from "../../src/services/supabase/storage.service";
 import { format } from "date-fns";
 import { create } from "zustand";
 
@@ -198,10 +199,13 @@ export default function ProcedureDetailScreen() {
   const client = clients.find((c) => c.id === procedure.clientId);
   const master = masters.find((m) => m.id === procedure.masterId);
 
+  // Only use remote photos (file:// URIs from old records won't load)
+  const remotePhotos = (procedure.photos ?? []).filter(isRemoteUri);
+
   // Always show an image — procedure photo or position-based fallback
   const heroImageUri =
-    procedure.photos && procedure.photos.length > 0
-      ? procedure.photos[0]
+    remotePhotos.length > 0
+      ? remotePhotos[0]
       : (POSITION_FALLBACKS[procedure.positions[0]] ??
         POSITION_FALLBACKS.default);
 
@@ -214,8 +218,8 @@ export default function ProcedureDetailScreen() {
         {
           text: t("common.delete"),
           style: "destructive",
-          onPress: () => {
-            removeProcedure(procedure.id);
+          onPress: async () => {
+            await removeProcedure(procedure.id);
             router.back();
           },
         },
@@ -483,14 +487,14 @@ export default function ProcedureDetailScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          {procedure.photos && procedure.photos.length > 0 ? (
+          {remotePhotos.length > 0 ? (
             <View style={styles.photosGrid}>
-              {procedure.photos.map((photo, idx) => (
+              {remotePhotos.map((photo, idx) => (
                 <PhotoThumb
                   key={photo + idx}
                   uri={photo}
                   size={PHOTO_SIZE}
-                  onPress={() => openImageViewer(procedure.photos!, idx)}
+                  onPress={() => openImageViewer(remotePhotos, idx)}
                 />
               ))}
             </View>
@@ -784,7 +788,6 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       flexWrap: "wrap",
       gap: PHOTO_GAP,
       paddingVertical: 12,
-      paddingHorizontal: 16,
     },
     photoThumb: {
       width: PHOTO_SIZE,

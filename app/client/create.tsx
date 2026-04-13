@@ -5,6 +5,7 @@ import {
   Pressable,
   TextInput,
   Keyboard,
+  Alert,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -50,17 +51,24 @@ export default function CreateClientScreen() {
 
   const phoneValue = watch("phone");
 
-  const onSubmit = (data: ClientFormData) => {
+  const [saving, setSaving] = useState(false);
+
+  const onSubmit = async (data: ClientFormData) => {
     Keyboard.dismiss();
-    addClient({
-      id: `c${Date.now()}`,
-      name: data.name,
-      phone: data.phone,
-      email: data.email || undefined,
-      lastVisit: new Date().toISOString().split("T")[0],
-      locationId: selectedLocationId || undefined,
-    });
-    router.back();
+    setSaving(true);
+    try {
+      await addClient({
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        lastVisit: new Date().toISOString().split("T")[0],
+        locationId: selectedLocationId || undefined,
+      });
+      router.back();
+    } catch (err: any) {
+      setSaving(false);
+      Alert.alert("Error", err?.message ?? "Failed to save. Please try again.");
+    }
   };
 
   return (
@@ -195,6 +203,7 @@ export default function CreateClientScreen() {
           <Button
             title={t("clientForm.save")}
             onPress={handleSubmit(onSubmit)}
+            loading={saving}
             icon={<UserPlus size={18} color={colors.textOnAccent} />}
           />
         </BottomActionBar>

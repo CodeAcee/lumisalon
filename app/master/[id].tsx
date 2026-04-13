@@ -55,8 +55,8 @@ export default function MasterDetailScreen() {
         {
           text: t("common.delete"),
           style: "destructive",
-          onPress: () => {
-            removeMaster(id);
+          onPress: async () => {
+            await removeMaster(id);
             router.back();
           },
         },

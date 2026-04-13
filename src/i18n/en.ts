@@ -50,6 +50,7 @@ const en = {
     continueWithGoogle: "Continue with Google",
     noAccount: "Don't have an account?",
     signUp: "Sign Up",
+    invalidCredentials: "Invalid email or password.",
   },
 
   // ─── Auth – Sign Up ───────────────────────────────────────────────────────
@@ -64,6 +65,9 @@ const en = {
     createAccount: "Create Account",
     alreadyHaveAccount: "Already have an account?",
     signIn: "Sign In",
+    confirmEmail: "Confirm your email",
+    confirmEmailMessage: "We sent a confirmation link to your email. Please verify your account before signing in.",
+    registrationFailed: "Registration failed. Please try again.",
   },
 
   // ─── Auth – Forgot Password ───────────────────────────────────────────────
@@ -77,6 +81,7 @@ const en = {
     checkEmail: "Check your email",
     emailSentSubtitle: "We sent a password reset link to your email address.",
     backToLogin: "Back to Login",
+    sendFailed: "Failed to send reset link. Please try again.",
   },
 
   // ─── Home ─────────────────────────────────────────────────────────────────
@@ -89,6 +94,7 @@ const en = {
     procedures: "procedures",
     clients: "clients",
     noProcedures: "No procedures yet",
+    noProceduresHint: "Tap + to record your first procedure",
     addFirstProcedure: "Tap + to add your first procedure",
     filterByLocation: "Filter by Location",
     recentProcedures: "Recent Procedures",
@@ -98,7 +104,8 @@ const en = {
   masters: {
     title: "Masters",
     searchPlaceholder: "Search masters...",
-    noMasters: "No masters found",
+    noMasters: "No masters yet",
+    noMastersHint: "Add your first master to get started",
     addMaster: "Add Master",
     newMaster: "New Master",
   },
@@ -107,7 +114,8 @@ const en = {
   clients: {
     title: "Clients",
     searchPlaceholder: "Search clients...",
-    noClients: "No clients found",
+    noClients: "No clients yet",
+    noClientsHint: "Add your first client to get started",
     addClient: "Add Client",
     newClient: "New Client",
   },
@@ -292,6 +300,7 @@ const en = {
   procedureForm: {
     newTitle: "New Procedure",
     editTitle: "Edit Procedure",
+    createTitle: "Create Procedure",
     client: "Client",
     master: "Master",
     location: "Location",

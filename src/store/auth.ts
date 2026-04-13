@@ -5,18 +5,11 @@ import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
-  setTokens: (tokens: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-  }) => void;
-  setUser: (user: User) => void;
-  signIn: (user: User, tokens: { accessToken: string; refreshToken: string; expiresIn: number }) => void;
+  setUser: (user: User | null) => void;
+  signIn: (user: User) => void;
   signOut: () => void;
   updateProfile: (data: Partial<User>) => void;
   setLoading: (loading: boolean) => void;
@@ -26,37 +19,17 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
 
-      setTokens: (tokens) =>
-        set({
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        }),
-
       setUser: (user) =>
-        set({ user, isAuthenticated: true }),
+        set({ user, isAuthenticated: user !== null }),
 
-      signIn: (user, tokens) =>
-        set({
-          user,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        }),
+      signIn: (user) =>
+        set({ user, isAuthenticated: true, isLoading: false }),
 
       signOut: () =>
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        }),
+        set({ user: null, isAuthenticated: false, isLoading: false }),
 
       updateProfile: (data) =>
         set((state) => ({
@@ -70,8 +43,6 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     },

@@ -1,0 +1,90 @@
+import { supabase } from '../../lib/supabase';
+import type { Procedure, Position } from '../../types';
+
+type Row = {
+  id: string;
+  client_id: string;
+  master_id: string;
+  location_id: string | null;
+  date: string;
+  services: string[];
+  positions: string[];
+  notes: string | null;
+  photos: string[];
+};
+
+const fromRow = (row: Row): Procedure => ({
+  id: row.id,
+  clientId: row.client_id,
+  masterId: row.master_id,
+  locationId: row.location_id ?? undefined,
+  date: row.date,
+  services: row.services,
+  positions: row.positions as Position[],
+  notes: row.notes ?? undefined,
+  photos: row.photos,
+});
+
+const getUserId = async (): Promise<string> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  return user.id;
+};
+
+export const proceduresService = {
+  getAll: async (): Promise<Procedure[]> => {
+    const { data, error } = await supabase
+      .from('procedures')
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return (data as Row[]).map(fromRow);
+  },
+
+  create: async (procedure: Omit<Procedure, 'id'>): Promise<Procedure> => {
+    const user_id = await getUserId();
+    const { data, error } = await supabase
+      .from('procedures')
+      .insert({
+        user_id,
+        client_id: procedure.clientId,
+        master_id: procedure.masterId,
+        location_id: procedure.locationId ?? null,
+        date: procedure.date,
+        services: procedure.services,
+        positions: procedure.positions,
+        notes: procedure.notes ?? null,
+        photos: procedure.photos ?? [],
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return fromRow(data as Row);
+  },
+
+  update: async (id: string, updates: Partial<Procedure>): Promise<Procedure> => {
+    const patch: Record<string, unknown> = {};
+    if (updates.clientId !== undefined) patch.client_id = updates.clientId;
+    if (updates.masterId !== undefined) patch.master_id = updates.masterId;
+    if (updates.locationId !== undefined) patch.location_id = updates.locationId ?? null;
+    if (updates.date !== undefined) patch.date = updates.date;
+    if (updates.services !== undefined) patch.services = updates.services;
+    if (updates.positions !== undefined) patch.positions = updates.positions;
+    if (updates.notes !== undefined) patch.notes = updates.notes ?? null;
+    if (updates.photos !== undefined) patch.photos = updates.photos;
+
+    const { data, error } = await supabase
+      .from('procedures')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return fromRow(data as Row);
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('procedures').delete().eq('id', id);
+    if (error) throw error;
+  },
+};

@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useMemo, useState, useRef, useCallback } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors, useTheme } from "../../src/theme/ThemeContext";
@@ -15,6 +15,7 @@ import { FAB } from "../../src/components/home/FAB";
 import { HomeHeader } from "../../src/components/home/HomeHeader";
 import { HomeSearchBar } from "../../src/components/home/HomeSearchBar";
 import { StatsRow } from "../../src/components/home/StatsRow";
+import { Sparkles, Plus } from "lucide-react-native";
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -26,6 +27,7 @@ export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
 
   const procedures = useAppStore((state) => state.procedures);
+  const dataLoaded = useAppStore((state) => state.dataLoaded);
   const masters = useAppStore((state) => state.masters);
   const locations = useAppStore((state) => state.locations);
   const activeLocationId = useAppStore((state) => state.activeLocationId);
@@ -42,16 +44,24 @@ export default function HomeScreen() {
   const getMasterById = useAppStore((state) => state.getMasterById);
 
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
 
   const filtered = getFilteredProcedures();
   const recentProcedures = filtered.slice(0, 4);
 
   const activeLocation = locations.find((l) => l.id === activeLocationId);
 
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayCount = useMemo(
     () =>
-      procedures.filter((p) =>
-        p.date.startsWith(format(new Date(), "yyyy-MM-dd")),
+      procedures.filter(
+        (p) => format(new Date(p.date), "yyyy-MM-dd") === todayStr,
       ).length,
     [procedures],
   );
@@ -93,6 +103,7 @@ export default function HomeScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -104,14 +115,30 @@ export default function HomeScreen() {
           <Text style={s.sectionTitle}>{t("home.recentProcedures")}</Text>
         </View>
 
-        {procedures.length === 0 && !homeSearch ? (
+        {!dataLoaded ? (
           <>
             <ProcedureSkeleton />
             <ProcedureSkeleton />
           </>
         ) : recentProcedures.length === 0 ? (
-          <View style={s.emptyCard}>
-            <Text style={s.emptyText}>{t("home.noProcedures")}</Text>
+          <View style={s.emptyState}>
+            <View style={s.emptyIconWrap}>
+              <Sparkles size={28} color={colors.accent} />
+            </View>
+            <Text style={s.emptyTitle}>{t("home.noProcedures")}</Text>
+            <Text style={s.emptyHint}>{t("home.noProceduresHint")}</Text>
+            <Pressable
+              style={s.emptyBtn}
+              onPress={() =>
+                router.push({
+                  pathname: "/procedure/create",
+                  params: { locationId: activeLocationId ?? "" },
+                })
+              }
+            >
+              <Plus size={16} color={colors.textOnAccent} />
+              <Text style={s.emptyBtnText}>{t("procedureForm.newTitle")}</Text>
+            </Pressable>
           </View>
         ) : (
           recentProcedures.map((proc) => {
@@ -179,15 +206,47 @@ function makeStyles(c: ReturnType<typeof useColors>, _isDark: boolean) {
       color: c.textPrimary,
     },
 
-    emptyCard: {
-      backgroundColor: c.bgCard,
-      borderRadius: BorderRadius.lg,
-      padding: 32,
+    emptyState: {
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: c.border,
+      paddingVertical: 48,
+      paddingHorizontal: 32,
+      gap: 12,
     },
-    emptyText: { fontSize: FontSize.md, color: c.textTertiary },
+    emptyIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: c.bgChip,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    emptyTitle: {
+      fontSize: FontSize.title,
+      fontWeight: "700",
+      color: c.textPrimary,
+      textAlign: "center",
+    },
+    emptyHint: {
+      fontSize: FontSize.body,
+      color: c.textTertiary,
+      textAlign: "center",
+      marginBottom: 4,
+    },
+    emptyBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: c.accent,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: BorderRadius.md,
+    },
+    emptyBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: "600",
+      color: c.textOnAccent,
+    },
 
     fab: {
       position: "absolute",

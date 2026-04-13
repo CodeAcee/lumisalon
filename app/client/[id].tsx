@@ -62,8 +62,8 @@ export default function ClientDetailScreen() {
         {
           text: t("common.delete"),
           style: "destructive",
-          onPress: () => {
-            removeClient(id);
+          onPress: async () => {
+            await removeClient(id);
             router.back();
           },
         },

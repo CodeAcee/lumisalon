@@ -5,6 +5,7 @@ import {
   Pressable,
   TextInput,
   Keyboard,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +13,7 @@ import { ArrowLeft, Mail, Send } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { Colors, FontSize, BorderRadius } from "../../src/constants/theme";
+import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
 import { Button } from "../../src/components/ui/Button";
 import { useAuthStore } from "../../src/store";
@@ -20,6 +21,7 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
 } from "../../src/lib/schemas";
+import { supabaseAuth } from "../../src/services/supabase/auth.service";
 import { create } from "zustand";
 
 const useForgotStore = create<{ sent: boolean; setSent: (v: boolean) => void }>(
@@ -48,13 +50,17 @@ export default function ForgotPasswordScreen() {
     defaultValues: { email: "" },
   });
 
-  const onSubmit = (_data: ForgotPasswordFormData) => {
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     Keyboard.dismiss();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await supabaseAuth.resetPassword(data.email);
       setLoading(false);
       setSent(true);
-    }, 1000);
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert(t("common.error"), err?.message ?? t("forgotPassword.sendFailed"));
+    }
   };
 
   return (
@@ -86,11 +92,13 @@ export default function ForgotPasswordScreen() {
         {!sent && (
           <>
             <View style={{ height: 32 }} />
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View>
+            <View
+              style={[styles.card, errors.email && styles.cardError]}
+            >
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
                   <View
                     style={[styles.field, errors.email && styles.fieldError]}
                   >
@@ -106,12 +114,12 @@ export default function ForgotPasswordScreen() {
                       style={styles.input}
                     />
                   </View>
-                  {errors.email && (
-                    <Text style={styles.errorText}>{errors.email.message}</Text>
-                  )}
-                </View>
+                )}
+              />
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email.message}</Text>
               )}
-            />
+            </View>
             <View style={{ height: 24 }} />
             <View style={styles.buttonWrap}>
               <Button
@@ -199,20 +207,26 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       lineHeight: 22,
       paddingHorizontal: 16,
     },
+    card: {
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+      width: "100%",
+    },
+    cardError: {
+      borderColor: c.danger,
+    },
     field: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgChip,
-      borderRadius: BorderRadius.lg,
-      height: 52,
       paddingHorizontal: 16,
-      gap: 10,
-      width: "100%",
-      borderWidth: 1,
-      borderColor: "transparent",
+      paddingVertical: 14,
+      gap: 12,
     },
     fieldError: {
-      borderColor: c.danger,
+      backgroundColor: c.dangerBg,
     },
     input: {
       flex: 1,
@@ -222,8 +236,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     errorText: {
       fontSize: FontSize.sm,
       color: c.danger,
-      marginLeft: 4,
-      marginTop: 4,
+      marginLeft: 16,
+      marginBottom: 10,
       alignSelf: "flex-start",
     },
   });

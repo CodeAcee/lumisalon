@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   View,
   Text,
@@ -29,6 +30,7 @@ import {
   type EditProfileFormData,
 } from "../../src/lib/schemas";
 import { PhoneInput } from "../../src/components/ui/PhoneInput";
+import { uploadImage, STORAGE_LIMITS } from "../../src/services/supabase/storage.service";
 
 function normalizePhone(phone: string | undefined): string {
   if (!phone) return "";
@@ -43,6 +45,7 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, updateProfile, isLoading, setLoading } = useAuthStore();
   const { t } = useTranslation();
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | undefined>(user?.avatar);
 
   const {
     control,
@@ -61,18 +64,35 @@ export default function EditProfileScreen() {
   const currentName = watch("name");
   const phoneValue = watch("phone");
 
-  const onSubmit = (data: EditProfileFormData) => {
+  const onSubmit = async (data: EditProfileFormData) => {
     Keyboard.dismiss();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      let remoteAvatar: string | undefined = localAvatarUri;
+      if (localAvatarUri && !localAvatarUri.startsWith("http")) {
+        remoteAvatar = await uploadImage(localAvatarUri, "profiles", STORAGE_LIMITS.masterAvatar);
+      }
+
+      const { supabaseAuth } = await import("../../src/services/supabase/auth.service");
+      if (user?.id) {
+        await supabaseAuth.updateProfile(user.id, {
+          name: data.name,
+          phone: data.phone || undefined,
+          avatar: remoteAvatar,
+        });
+      }
       updateProfile({
         name: data.name,
         email: data.email,
         phone: data.phone || undefined,
+        avatar: remoteAvatar,
       });
       setLoading(false);
       router.back();
-    }, 800);
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert("Error", err?.message ?? "Failed to save. Please try again.");
+    }
   };
 
   const pickAvatar = async () => {
@@ -84,7 +104,7 @@ export default function EditProfileScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      updateProfile({ avatar: result.assets[0].uri });
+      setLocalAvatarUri(result.assets[0].uri);
     }
   };
 
@@ -118,9 +138,9 @@ export default function EditProfileScreen() {
           {/* Photo section */}
           <Pressable style={styles.photoSection} onPress={pickAvatar}>
             <View style={styles.avatarWrapper}>
-              {user?.avatar ? (
+              {localAvatarUri ? (
                 <Image
-                  source={{ uri: user.avatar }}
+                  source={{ uri: localAvatarUri }}
                   style={{ width: 96, height: 96, borderRadius: 48 }}
                   contentFit="cover"
                   transition={200}

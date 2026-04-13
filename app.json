@@ -28,7 +28,9 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.lumisalon.app",
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -88,7 +90,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},
