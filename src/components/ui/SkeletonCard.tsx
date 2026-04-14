@@ -1,9 +1,11 @@
 import { View, StyleSheet, Dimensions } from "react-native";
 import ContentLoader, { Rect, Circle } from "react-content-loader/native";
+import { BorderRadius } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 
 const { width: W } = Dimensions.get("window");
-const CARD_W = W - 32;
+// Screen edge padding is 20px each side (Spacing.xl), so card width = W - 40
+const CARD_W = W - 40;
 
 /** Procedure card skeleton — matches the card in home screen */
 export function ProcedureSkeleton() {
@@ -75,7 +77,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
     card: {
       backgroundColor: c.bgCard,
-      borderRadius: 16,
+      borderRadius: BorderRadius.xl,
       overflow: "hidden",
       marginBottom: 16,
       borderWidth: 1,
@@ -83,7 +85,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     listCard: {
       backgroundColor: c.white,
-      borderRadius: 12,
+      borderRadius: BorderRadius.md,
       overflow: "hidden",
       paddingHorizontal: 4,
       borderWidth: 1,
