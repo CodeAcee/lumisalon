@@ -150,6 +150,7 @@ export const proceduresService = {
   },
 
   update: async (id: string, updates: Partial<Procedure>): Promise<Procedure> => {
+    const user_id = await getUserId();
     const patch: Record<string, unknown> = {};
     if (updates.clientId !== undefined) patch.client_id = updates.clientId;
     if (updates.masterId !== undefined) patch.master_id = updates.masterId;
@@ -164,6 +165,7 @@ export const proceduresService = {
       .from('procedures')
       .update(patch)
       .eq('id', id)
+      .eq('user_id', user_id)
       .select()
       .single();
     if (error) throw error;
@@ -171,7 +173,12 @@ export const proceduresService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('procedures').delete().eq('id', id);
+    const user_id = await getUserId();
+    const { error } = await supabase
+      .from('procedures')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id);
     if (error) throw error;
   },
 };

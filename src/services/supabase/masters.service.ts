@@ -57,6 +57,7 @@ export const mastersService = {
   },
 
   update: async (id: string, updates: Partial<Master>): Promise<Master> => {
+    const user_id = await getUserId();
     const patch: Record<string, unknown> = {};
     if (updates.name !== undefined) patch.name = updates.name;
     if (updates.phone !== undefined) patch.phone = updates.phone ?? null;
@@ -69,6 +70,7 @@ export const mastersService = {
       .from('masters')
       .update(patch)
       .eq('id', id)
+      .eq('user_id', user_id)
       .select()
       .single();
     if (error) throw error;
@@ -76,7 +78,12 @@ export const mastersService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('masters').delete().eq('id', id);
+    const user_id = await getUserId();
+    const { error } = await supabase
+      .from('masters')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id);
     if (error) throw error;
   },
 };

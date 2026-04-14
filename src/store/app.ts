@@ -43,6 +43,10 @@ interface AppState {
   clientSearch: string;
   masterSearch: string;
 
+  // ── Error state ───────────────────────────────────────────
+  /** Set when loadAllData or loadProceduresPage fails. Cleared on the next successful load. */
+  loadError: string | null;
+
   // ── UI state ──────────────────────────────────────────────
   filterSheetOpen: boolean;
 
@@ -95,6 +99,7 @@ interface AppState {
   setClientSearch: (search: string) => void;
   setMasterSearch: (search: string) => void;
   setFilterSheetOpen: (open: boolean) => void;
+  clearLoadError: () => void;
 
   // Getters
   getClientById: (id: string) => Client | undefined;
@@ -123,6 +128,8 @@ export const useAppStore = create<AppState>()(
       proceduresHasMore: true,
       proceduresLoading: false,
 
+      loadError: null,
+
       activeLocationId: null,
 
       homeSearch: '',
@@ -141,10 +148,11 @@ export const useAppStore = create<AppState>()(
             locationsService.getAll(),
           ]);
           // Set reference data first so search can resolve IDs on the first page load.
-          set({ clients, masters, locations });
+          set({ clients, masters, locations, loadError: null });
           await get().loadProceduresPage(true);
-        } catch {
-          set({ dataLoaded: true });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to load data';
+          set({ dataLoaded: true, loadError: msg });
         }
       },
 
@@ -204,9 +212,11 @@ export const useAppStore = create<AppState>()(
             proceduresHasMore: hasMore,
             proceduresLoading: false,
             dataLoaded: true,
+            loadError: null,
           }));
-        } catch {
-          set({ proceduresLoading: false, dataLoaded: true });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to load procedures';
+          set({ proceduresLoading: false, dataLoaded: true, loadError: msg });
         }
       },
 
@@ -311,6 +321,7 @@ export const useAppStore = create<AppState>()(
       setClientSearch: (clientSearch) => set({ clientSearch }),
       setMasterSearch: (masterSearch) => set({ masterSearch }),
       setFilterSheetOpen: (filterSheetOpen) => set({ filterSheetOpen }),
+      clearLoadError: () => set({ loadError: null }),
 
       // ── Getters ───────────────────────────────────────────
       getClientById: (id) => get().clients.find((c) => c.id === id),

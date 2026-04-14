@@ -63,6 +63,7 @@ export const clientsService = {
   },
 
   update: async (id: string, updates: Partial<Client>): Promise<Client> => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
       .from('clients')
       .update({
@@ -76,6 +77,7 @@ export const clientsService = {
         location_id: updates.locationId ?? null,
       })
       .eq('id', id)
+      .eq('user_id', user_id)
       .select()
       .single();
     if (error) throw error;
@@ -83,7 +85,12 @@ export const clientsService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('clients').delete().eq('id', id);
+    const user_id = await getUserId();
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id);
     if (error) throw error;
   },
 };

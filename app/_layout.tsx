@@ -2,10 +2,8 @@ import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { StyleSheet } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { queryClient } from "../src/lib/react-query";
 import { ImageViewer } from "../src/components/ui/ImageViewer";
 import { ThemeProvider, useTheme } from "../src/theme/ThemeContext";
 import { PaperProvider } from "react-native-paper";
@@ -164,32 +162,26 @@ export default function RootLayout() {
     scheduleWorkingHourNotifications(workingHours, enabled);
     i18n.changeLanguage(language ?? "en");
 
-    // Restore existing Supabase session on app start
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await supabaseAuth.getProfile(
-          session.user.id,
-          session.user.email ?? "",
-        );
-        signIn(profile);
-        await loadAllData();
-      } else {
-        // No real Supabase session — clear any stale Zustand auth state
-        signOut();
-      }
-    });
-
-    // Listen to auth state changes (login / logout / token refresh)
+    // Single auth listener handles both session restore (INITIAL_SESSION)
+    // and fresh logins (SIGNED_IN) — avoids double loadAllData on cold start.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
+        if (
+          (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
+          session?.user
+        ) {
           const profile = await supabaseAuth.getProfile(
             session.user.id,
             session.user.email ?? "",
           );
           signIn(profile);
           await loadAllData();
-          router.replace("/(tabs)");
+          if (event === "SIGNED_IN") {
+            router.replace("/(tabs)");
+          }
+        } else if (event === "INITIAL_SESSION" && !session) {
+          // No persisted session — clear any stale Zustand auth state
+          signOut();
         } else if (event === "SIGNED_OUT") {
           signOut();
           router.replace("/(auth)");
@@ -203,19 +195,17 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <KeyboardProvider>
-          <GestureHandlerRootView style={styles.root}>
-            <PaperProvider>
-              <BottomSheetModalProvider>
-                <AppShell />
-              </BottomSheetModalProvider>
-            </PaperProvider>
-          </GestureHandlerRootView>
-        </KeyboardProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <KeyboardProvider>
+        <GestureHandlerRootView style={styles.root}>
+          <PaperProvider>
+            <BottomSheetModalProvider>
+              <AppShell />
+            </BottomSheetModalProvider>
+          </PaperProvider>
+        </GestureHandlerRootView>
+      </KeyboardProvider>
+    </ThemeProvider>
   );
 }
 

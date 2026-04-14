@@ -18,6 +18,7 @@ const en = {
     email: "Email",
     notes: "Notes",
     noResults: "No results found",
+    tapToRetry: "Tap to retry",
     areYouSure: "Are you sure?",
     cannotUndo: "This action cannot be undone.",
     error: "Error",

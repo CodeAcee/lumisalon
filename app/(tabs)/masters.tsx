@@ -41,6 +41,8 @@ export default function MastersScreen() {
   const setMasterSearch = useAppStore((state) => state.setMasterSearch);
   const getFilteredMasters = useAppStore((state) => state.getFilteredMasters);
   const dataLoaded = useAppStore((state) => state.dataLoaded);
+  const loadError = useAppStore((state) => state.loadError);
+  const loadAllData = useAppStore((state) => state.loadAllData);
   useAppStore((state) => state.masters);
   useAppStore((state) => state.activeLocationId);
   const locations = useAppStore((state) => state.locations);
@@ -153,6 +155,12 @@ export default function MastersScreen() {
         </Text>
       </View>
 
+      {loadError && (
+        <Pressable style={s.errorBanner} onPress={loadAllData} accessibilityRole="button">
+          <Text style={s.errorBannerText}>{t("common.error")} — {t("common.tapToRetry")}</Text>
+        </Pressable>
+      )}
+
       {isInitialLoad ? (
         <View style={s.skeletonWrap}>
           {SKELETON_KEYS.map((k) => (
@@ -222,6 +230,20 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontSize: FontSize.body,
       fontWeight: "500",
       color: c.textSecondary,
+    },
+    errorBanner: {
+      marginHorizontal: 20,
+      marginBottom: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      backgroundColor: c.danger,
+      borderRadius: BorderRadius.md,
+      alignItems: "center",
+    },
+    errorBannerText: {
+      fontSize: FontSize.body,
+      fontWeight: "600",
+      color: "#fff",
     },
     skeletonWrap: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
     list: {

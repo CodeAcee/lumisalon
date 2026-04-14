@@ -40,6 +40,8 @@ export default function ClientsScreen() {
   const setClientSearch = useAppStore((state) => state.setClientSearch);
   const getFilteredClients = useAppStore((state) => state.getFilteredClients);
   const dataLoaded = useAppStore((state) => state.dataLoaded);
+  const loadError = useAppStore((state) => state.loadError);
+  const loadAllData = useAppStore((state) => state.loadAllData);
   useAppStore((state) => state.clients);
   const locations = useAppStore((state) => state.locations);
 
@@ -142,6 +144,12 @@ export default function ClientsScreen() {
         )}
       </Animated.View>
 
+      {loadError && (
+        <Pressable style={s.errorBanner} onPress={loadAllData} accessibilityRole="button">
+          <Text style={s.errorBannerText}>{t("common.error")} — {t("common.tapToRetry")}</Text>
+        </Pressable>
+      )}
+
       {isInitialLoad ? (
         <View style={s.skeletonWrap}>
           {SKELETON_KEYS.map((k) => (
@@ -206,6 +214,20 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 12,
     },
     searchInput: { flex: 1, fontSize: FontSize.body, color: c.textPrimary },
+    errorBanner: {
+      marginHorizontal: 20,
+      marginBottom: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      backgroundColor: c.danger,
+      borderRadius: BorderRadius.md,
+      alignItems: "center",
+    },
+    errorBannerText: {
+      fontSize: FontSize.body,
+      fontWeight: "600",
+      color: "#fff",
+    },
     skeletonWrap: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
     list: {
       paddingHorizontal: 16,

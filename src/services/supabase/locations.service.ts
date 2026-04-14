@@ -48,6 +48,7 @@ export const locationsService = {
   },
 
   update: async (id: string, updates: Partial<Location>): Promise<Location> => {
+    const user_id = await getUserId();
     const { data, error } = await supabase
       .from('locations')
       .update({
@@ -56,6 +57,7 @@ export const locationsService = {
         image: updates.image ?? null,
       })
       .eq('id', id)
+      .eq('user_id', user_id)
       .select()
       .single();
     if (error) throw error;
@@ -63,7 +65,12 @@ export const locationsService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('locations').delete().eq('id', id);
+    const user_id = await getUserId();
+    const { error } = await supabase
+      .from('locations')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id);
     if (error) throw error;
   },
 };

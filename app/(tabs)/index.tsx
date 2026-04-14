@@ -39,6 +39,8 @@ export default function HomeScreen() {
   const proceduresLoading = useAppStore((state) => state.proceduresLoading);
   const proceduresHasMore = useAppStore((state) => state.proceduresHasMore);
   const loadProceduresPage = useAppStore((state) => state.loadProceduresPage);
+  const loadError = useAppStore((state) => state.loadError);
+  const loadAllData = useAppStore((state) => state.loadAllData);
 
   const masters = useAppStore((state) => state.masters);
   const locations = useAppStore((state) => state.locations);
@@ -185,6 +187,12 @@ export default function HomeScreen() {
         onFilterPress={() => setFilterSheetOpen(true)}
       />
 
+      {loadError && (
+        <Pressable style={s.errorBanner} onPress={loadAllData} accessibilityRole="button">
+          <Text style={s.errorBannerText}>{t("common.error")} — {t("common.tapToRetry")}</Text>
+        </Pressable>
+      )}
+
       <FlatList
         ref={listRef}
         data={procedures}
@@ -297,6 +305,21 @@ function makeStyles(c: ReturnType<typeof useColors>, _isDark: boolean) {
 
     loadMoreSpinner: {
       paddingVertical: 16,
+    },
+
+    errorBanner: {
+      marginHorizontal: 20,
+      marginBottom: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      backgroundColor: c.danger,
+      borderRadius: BorderRadius.md,
+      alignItems: "center",
+    },
+    errorBannerText: {
+      fontSize: FontSize.body,
+      fontWeight: "600",
+      color: "#fff",
     },
 
     fab: {
