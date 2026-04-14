@@ -35,6 +35,8 @@ export function FAB({ onPress, style }: FABProps) {
           scale.value = withSpring(1, { damping: 12 });
         }}
         style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
+        accessibilityRole="button"
+        accessibilityLabel="New procedure"
       >
         {isGlassAvailable ? (
           <GlassView
@@ -42,7 +44,7 @@ export function FAB({ onPress, style }: FABProps) {
             glassEffectStyle="clear"
             isInteractive
           >
-            <Plus size={24} color="#fff" />
+            <Plus size={24} color={colors.white} />
           </GlassView>
         ) : (
           <Plus size={24} color={colors.textOnAccent} />

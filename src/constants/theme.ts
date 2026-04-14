@@ -26,6 +26,8 @@ export const lightColors = {
   danger: "#E25C5C",
   dangerBg: "#FEF2F2",
   success: "#4CAF50",
+  warning: "#F5A623",
+  warningBg: "#FFF8EC",
   skeleton: "#F0E8E4",
   skeletonHighlight: "#F8F2EF",
   overlay: "rgba(0,0,0,0.4)",
@@ -59,6 +61,8 @@ export const darkColors = {
   danger: "#FF6B6B",
   dangerBg: "#3D1A1A",
   success: "#66BB6A",
+  warning: "#FFB74D",
+  warningBg: "#2E2010",
   skeleton: "#2D2321",
   skeletonHighlight: "#3D3430",
   overlay: "rgba(0,0,0,0.6)",
@@ -68,10 +72,10 @@ export const darkColors = {
 export const Colors = lightColors;
 
 export const Fonts = {
-  regular: "Inter_400Regular",
-  medium: "Inter_500Medium",
-  semiBold: "Inter_600SemiBold",
-  bold: "Inter_700Bold",
+  regular: "DMSans_400Regular",
+  medium: "DMSans_500Medium",
+  semiBold: "DMSans_600SemiBold",
+  bold: "DMSans_700Bold",
 } as const;
 
 export const FontSize = {

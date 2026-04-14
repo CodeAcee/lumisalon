@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { RefObject, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, Plus, X, Scissors } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, FlashListRef } from "@shopify/flash-list";
 import { useFocusEffect } from "expo-router";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors, useTheme } from "../../src/theme/ThemeContext";
@@ -23,6 +23,7 @@ import { useAppStore } from "../../src/store";
 import type { Master } from "../../src/types";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
+import { FlatList } from "react-native-gesture-handler";
 
 // Stable separator — defined outside so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
@@ -44,18 +45,11 @@ export default function MastersScreen() {
   useAppStore((state) => state.activeLocationId);
   const locations = useAppStore((state) => state.locations);
 
-  const listRef = useRef<FlashList<Master>>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      listRef.current?.scrollToOffset({ offset: 0, animated: false });
-    }, []),
-  );
+  const listRef = useRef<FlashListRef<Master>>(null);
 
   const filtered = getFilteredMasters();
   const isInitialLoad = !dataLoaded;
 
-  // Stable empty component
   const ListEmpty = useMemo(
     () => (
       <View style={s.emptyState}>
@@ -157,7 +151,7 @@ export default function MastersScreen() {
           ))}
         </View>
       ) : (
-        <FlashList
+        <FlashList<Master>
           ref={listRef}
           data={filtered}
           renderItem={renderMaster}

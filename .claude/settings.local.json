@@ -46,7 +46,8 @@
       "Bash(magick -size 1024x1024 'xc:#2D2321' -gravity center -fill '#D4A88C' -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-dark.png)",
       "Bash(magick -size 1024x1024 'xc:#C8A76C' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-gold.png)",
       "Bash(magick -size 1024x1024 'xc:#F5F0ED' -gravity center -fill '#D4A88C' -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-minimal.png)",
-      "Bash(magick -size 1024x1024 -define gradient:angle=145 'gradient:#EDCFBA-#C4926A' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-default.png)"
+      "Bash(magick -size 1024x1024 -define gradient:angle=145 'gradient:#EDCFBA-#C4926A' -gravity center -fill white -font /System/Library/Fonts/NewYorkItalic.ttf -pointsize 680 -annotate 0 L /Users/yaroslavpikiner/Desktop/lumisalon/assets/icons/icon-default.png)",
+      "Skill(design-review)"
     ]
   }
 }

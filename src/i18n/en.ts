@@ -98,6 +98,9 @@ const en = {
     addFirstProcedure: "Tap + to add your first procedure",
     filterByLocation: "Filter by Location",
     recentProcedures: "Recent Procedures",
+    seeAll: "See all",
+    seeAllCount: "See all ({{count}})",
+    showLess: "Show less",
   },
 
   // ─── Masters ──────────────────────────────────────────────────────────────

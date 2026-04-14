@@ -8,35 +8,60 @@ import { mastersService } from '../services/supabase/masters.service';
 import { proceduresService } from '../services/supabase/procedures.service';
 import { locationsService } from '../services/supabase/locations.service';
 
+const PROCEDURES_PAGE_SIZE = 20;
+
+// Module-scope timer so we can cancel a pending debounce from any action call.
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 interface AppState {
-  // Data
+  // ── Data ──────────────────────────────────────────────────
   clients: Client[];
   masters: Master[];
+  /**
+   * The current loaded batch of procedures.
+   * This is already server-filtered (location, filters, search).
+   * New pages are appended; resetting replaces the list entirely.
+   */
   procedures: Procedure[];
   services: ServiceResponse[];
   locations: Location[];
   dataLoaded: boolean;
 
-  // Active location (null = All locations)
+  // ── Procedures pagination ─────────────────────────────────
+  proceduresPage: number;
+  proceduresHasMore: boolean;
+  /** True while any procedures fetch is in-flight. */
+  proceduresLoading: boolean;
+
+  // ── Active location ───────────────────────────────────────
   activeLocationId: string | null;
 
-  // Search & Filters
+  // ── Search & Filters ──────────────────────────────────────
   homeSearch: string;
   procedureFilters: ProcedureFilters;
   clientFilter: string;
   clientSearch: string;
   masterSearch: string;
 
-  // UI state
+  // ── UI state ──────────────────────────────────────────────
   filterSheetOpen: boolean;
 
-  // Load all data from Supabase
+  // ── Actions ───────────────────────────────────────────────
+  /** Initial bootstrap: load clients, masters, locations, then first procedure page. */
   loadAllData: () => Promise<void>;
+
+  /**
+   * Load the next page of procedures (or reset to page 0 when reset=true).
+   * Reads current filters / search / location from the store automatically.
+   * Safe to call repeatedly; no-ops when already loading or no more pages.
+   */
+  loadProceduresPage: (reset?: boolean) => Promise<void>;
 
   // Location actions
   addLocation: (location: Omit<Location, 'id'>) => Promise<Location>;
   updateLocation: (id: string, data: Partial<Location>) => Promise<void>;
   removeLocation: (id: string) => Promise<void>;
+  /** Changing the active location resets and reloads procedures. */
   setActiveLocationId: (id: string | null) => void;
 
   // Client actions
@@ -62,7 +87,9 @@ interface AppState {
   addService: (service: ServiceResponse) => void;
 
   // Filter actions
+  /** Updates search text and debounces a full procedure list reset + reload. */
   setHomeSearch: (search: string) => void;
+  /** Applying filters resets and reloads procedures immediately. */
   setProcedureFilters: (filters: ProcedureFilters) => void;
   setClientFilter: (filter: string | 'All') => void;
   setClientSearch: (search: string) => void;
@@ -76,7 +103,6 @@ interface AppState {
   getLocationById: (id: string) => Location | undefined;
   getClientProcedures: (clientId: string) => Procedure[];
   getMasterProcedures: (masterId: string) => Procedure[];
-  getFilteredProcedures: () => Procedure[];
   getFilteredClients: () => Client[];
   getFilteredMasters: () => Master[];
   getMastersForLocation: (locationId: string) => Master[];
@@ -85,13 +111,17 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Data — starts empty, loaded from Supabase after login
+      // ── Initial state ──────────────────────────────────────
       clients: [],
       masters: [],
       procedures: [],
       services: [],
       locations: [],
       dataLoaded: false,
+
+      proceduresPage: 0,
+      proceduresHasMore: true,
+      proceduresLoading: false,
 
       activeLocationId: null,
 
@@ -102,22 +132,85 @@ export const useAppStore = create<AppState>()(
       masterSearch: '',
       filterSheetOpen: false,
 
-      // Load all data from Supabase
+      // ── Bootstrap ─────────────────────────────────────────
       loadAllData: async () => {
         try {
-          const [clients, masters, procedures, locations] = await Promise.all([
+          const [clients, masters, locations] = await Promise.all([
             clientsService.getAll(),
             mastersService.getAll(),
-            proceduresService.getAll(),
             locationsService.getAll(),
           ]);
-          set({ clients, masters, procedures, locations, dataLoaded: true });
+          // Set reference data first so search can resolve IDs on the first page load.
+          set({ clients, masters, locations });
+          await get().loadProceduresPage(true);
         } catch {
           set({ dataLoaded: true });
         }
       },
 
-      // Location actions
+      // ── Procedures pagination ─────────────────────────────
+      loadProceduresPage: async (reset = false) => {
+        const {
+          proceduresPage,
+          proceduresHasMore,
+          proceduresLoading,
+          activeLocationId,
+          procedureFilters,
+          homeSearch,
+          clients,
+          masters,
+        } = get();
+
+        if (proceduresLoading) return;
+        if (!reset && !proceduresHasMore) return;
+
+        const page = reset ? 0 : proceduresPage;
+        set({ proceduresLoading: true });
+
+        // Resolve text search to IDs from in-memory reference data.
+        // Clients and masters are fully loaded (small datasets), so matching
+        // locally and passing IDs to the server is fast and accurate.
+        let clientIds: string[] | undefined;
+        let masterIds: string[] | undefined;
+
+        if (homeSearch) {
+          const q = homeSearch.toLowerCase();
+          clientIds = clients
+            .filter((c) => c.name.toLowerCase().includes(q))
+            .map((c) => c.id);
+          masterIds = masters
+            .filter((m) => m.name.toLowerCase().includes(q))
+            .map((m) => m.id);
+        }
+
+        try {
+          const { data, hasMore } = await proceduresService.getPaged({
+            page,
+            limit: PROCEDURES_PAGE_SIZE,
+            locationId: activeLocationId,
+            masterId: procedureFilters.masterId,
+            clientId: procedureFilters.clientId,
+            position: procedureFilters.position,
+            dateFrom: procedureFilters.dateFrom,
+            dateTo: procedureFilters.dateTo,
+            search: homeSearch || undefined,
+            clientIds,
+            masterIds,
+          });
+
+          set((s) => ({
+            procedures: reset ? data : [...s.procedures, ...data],
+            proceduresPage: page + 1,
+            proceduresHasMore: hasMore,
+            proceduresLoading: false,
+            dataLoaded: true,
+          }));
+        } catch {
+          set({ proceduresLoading: false, dataLoaded: true });
+        }
+      },
+
+      // ── Location actions ──────────────────────────────────
       addLocation: async (location) => {
         const created = await locationsService.create(location);
         set((s) => ({ locations: [...s.locations, created] }));
@@ -136,9 +229,12 @@ export const useAppStore = create<AppState>()(
           activeLocationId: s.activeLocationId === id ? null : s.activeLocationId,
         }));
       },
-      setActiveLocationId: (activeLocationId) => set({ activeLocationId }),
+      setActiveLocationId: (activeLocationId) => {
+        set({ activeLocationId });
+        get().loadProceduresPage(true);
+      },
 
-      // Client actions
+      // ── Client actions ────────────────────────────────────
       setClients: (clients) => set({ clients }),
       addClient: async (client) => {
         const created = await clientsService.create(client);
@@ -156,7 +252,7 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ clients: s.clients.filter((c) => c.id !== id) }));
       },
 
-      // Master actions
+      // ── Master actions ────────────────────────────────────
       setMasters: (masters) => set({ masters }),
       addMaster: async (master) => {
         const created = await mastersService.create(master);
@@ -174,10 +270,11 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ masters: s.masters.filter((m) => m.id !== id) }));
       },
 
-      // Procedure actions
+      // ── Procedure actions ─────────────────────────────────
       setProcedures: (procedures) => set({ procedures }),
       addProcedure: async (procedure) => {
         const created = await proceduresService.create(procedure);
+        // Prepend so the new item appears at the top without a full reload.
         set((s) => ({ procedures: [created, ...s.procedures] }));
         return created;
       },
@@ -192,20 +289,30 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ procedures: s.procedures.filter((p) => p.id !== id) }));
       },
 
-      // Service actions
+      // ── Service actions ───────────────────────────────────
       setServices: (services) => set({ services }),
       addService: (service) =>
         set((s) => ({ services: [...s.services, service] })),
 
-      // Filter actions
-      setHomeSearch: (homeSearch) => set({ homeSearch }),
-      setProcedureFilters: (procedureFilters) => set({ procedureFilters }),
+      // ── Filter actions ────────────────────────────────────
+      setHomeSearch: (homeSearch) => {
+        set({ homeSearch });
+        // Debounce so we don't fire a request on every keystroke.
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+          get().loadProceduresPage(true);
+        }, 400);
+      },
+      setProcedureFilters: (procedureFilters) => {
+        set({ procedureFilters });
+        get().loadProceduresPage(true);
+      },
       setClientFilter: (clientFilter) => set({ clientFilter }),
       setClientSearch: (clientSearch) => set({ clientSearch }),
       setMasterSearch: (masterSearch) => set({ masterSearch }),
       setFilterSheetOpen: (filterSheetOpen) => set({ filterSheetOpen }),
 
-      // Getters
+      // ── Getters ───────────────────────────────────────────
       getClientById: (id) => get().clients.find((c) => c.id === id),
       getMasterById: (id) => get().masters.find((m) => m.id === id),
       getProcedureById: (id) => get().procedures.find((p) => p.id === id),
@@ -214,57 +321,6 @@ export const useAppStore = create<AppState>()(
         get().procedures.filter((p) => p.clientId === clientId),
       getMasterProcedures: (masterId) =>
         get().procedures.filter((p) => p.masterId === masterId),
-
-      getFilteredProcedures: () => {
-        const { procedures, procedureFilters, homeSearch, clients, masters, activeLocationId } = get();
-        let filtered = [...procedures];
-
-        if (activeLocationId) {
-          const locationMasterIds = new Set(
-            masters
-              .filter((m) => m.locationIds?.includes(activeLocationId))
-              .map((m) => m.id),
-          );
-          filtered = filtered.filter(
-            (p) =>
-              p.locationId === activeLocationId ||
-              locationMasterIds.has(p.masterId),
-          );
-        }
-
-        if (homeSearch) {
-          const q = homeSearch.toLowerCase();
-          filtered = filtered.filter((p) => {
-            const client = clients.find((c) => c.id === p.clientId);
-            const master = masters.find((m) => m.id === p.masterId);
-            return (
-              client?.name.toLowerCase().includes(q) ||
-              master?.name.toLowerCase().includes(q) ||
-              p.services.some((s) => s.toLowerCase().includes(q))
-            );
-          });
-        }
-
-        if (procedureFilters.masterId) {
-          filtered = filtered.filter((p) => p.masterId === procedureFilters.masterId);
-        }
-        if (procedureFilters.clientId) {
-          filtered = filtered.filter((p) => p.clientId === procedureFilters.clientId);
-        }
-        if (procedureFilters.position) {
-          filtered = filtered.filter((p) =>
-            p.positions.includes(procedureFilters.position!),
-          );
-        }
-        if (procedureFilters.dateFrom) {
-          filtered = filtered.filter((p) => p.date >= procedureFilters.dateFrom!);
-        }
-        if (procedureFilters.dateTo) {
-          filtered = filtered.filter((p) => p.date <= procedureFilters.dateTo!);
-        }
-
-        return filtered;
-      },
 
       getFilteredClients: () => {
         const { clients, clientFilter, clientSearch } = get();

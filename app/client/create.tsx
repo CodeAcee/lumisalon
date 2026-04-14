@@ -288,7 +288,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textTertiary,
     },
     errorsBox: {
-      backgroundColor: "#FEF2F2",
+      backgroundColor: c.dangerBg,
       borderRadius: BorderRadius.sm,
       padding: 12,
       gap: 4,

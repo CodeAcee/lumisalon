@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { MapPin, ChevronDown, User } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { BorderRadius, FontSize } from "../../constants/theme";
+import { BorderRadius, FontSize, Spacing } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 
 interface HomeHeaderProps {
@@ -52,7 +52,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 16,
+      paddingHorizontal: Spacing.xl,
       paddingVertical: 10,
     },
     locationBtn: {

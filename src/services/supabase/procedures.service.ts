@@ -26,19 +26,106 @@ const fromRow = (row: Row): Procedure => ({
 });
 
 const getUserId = async (): Promise<string> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
   return user.id;
 };
 
+export interface GetPagedParams {
+  page: number;
+  limit: number;
+  locationId?: string | null;
+  // Structured filters — applied server-side with AND logic
+  masterId?: string;
+  clientId?: string;
+  position?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  // Text search support
+  // clientIds / masterIds: IDs resolved from local cache matching the search term
+  // search: raw term used as fallback for services text search
+  search?: string;
+  clientIds?: string[];
+  masterIds?: string[];
+}
+
 export const proceduresService = {
-  getAll: async (): Promise<Procedure[]> => {
-    const { data, error } = await supabase
+  /**
+   * Fetch a single page of procedures with all filters applied server-side.
+   * Returns { data, hasMore } so the caller knows whether to show a load-more trigger.
+   *
+   * Search strategy:
+   *  - Client / master name → resolved to IDs by the caller from in-memory cache
+   *    and sent as `client_id IN (…) OR master_id IN (…)`
+   *  - No name match → fall back to `services::text ILIKE '%q%'` (partial match on
+   *    the serialised Postgres text[] array, e.g. "{Haircut,Manicure}")
+   */
+  getPaged: async ({
+    page,
+    limit,
+    locationId,
+    masterId,
+    clientId,
+    position,
+    dateFrom,
+    dateTo,
+    search,
+    clientIds,
+    masterIds,
+  }: GetPagedParams): Promise<{ data: Procedure[]; hasMore: boolean }> => {
+    let query = supabase
       .from('procedures')
       .select('*')
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .range(page * limit, (page + 1) * limit - 1);
+
+    if (locationId) {
+      query = query.eq('location_id', locationId);
+    }
+    if (masterId) {
+      query = query.eq('master_id', masterId);
+    }
+    if (clientId) {
+      query = query.eq('client_id', clientId);
+    }
+    if (position) {
+      query = query.contains('positions', [position]);
+    }
+    if (dateFrom) {
+      query = query.gte('date', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('date', dateTo);
+    }
+
+    if (search) {
+      const orParts: string[] = [];
+      if (clientIds?.length) {
+        orParts.push(`client_id.in.(${clientIds.join(',')})`);
+      }
+      if (masterIds?.length) {
+        orParts.push(`master_id.in.(${masterIds.join(',')})`);
+      }
+
+      if (orParts.length > 0) {
+        // Name matches found — query by IDs
+        query = query.or(orParts.join(','));
+      } else {
+        // No name match — search the serialised services array text
+        // services::text produces e.g. "{Haircut,Manicure}" which supports ILIKE
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        query = (query as any).filter('services::text', 'ilike', `%${search}%`);
+      }
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
-    return (data as Row[]).map(fromRow);
+    return {
+      data: (data as Row[]).map(fromRow),
+      hasMore: data.length === limit,
+    };
   },
 
   create: async (procedure: Omit<Procedure, 'id'>): Promise<Procedure> => {

@@ -102,6 +102,9 @@ const uk = {
     addFirstProcedure: "Натисніть + щоб додати першу процедуру",
     filterByLocation: "Фільтр за локацією",
     recentProcedures: "Останні процедури",
+    seeAll: "Всі",
+    seeAllCount: "Всі ({{count}})",
+    showLess: "Згорнути",
   },
 
   // ─── Masters ──────────────────────────────────────────────────────────────

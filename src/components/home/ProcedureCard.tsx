@@ -65,6 +65,8 @@ export function ProcedureCard({
         scale.value = withSpring(1);
       }}
       style={[s.card, animatedStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={`${clientName} — ${masterName}`}
     >
       <View style={s.imgWrap}>
         <Image
@@ -104,7 +106,7 @@ const styles = (c: ReturnType<typeof useColors>) =>
       marginBottom: 16,
       borderWidth: 1,
       borderColor: c.border,
-      shadowColor: "#2D2321",
+      shadowColor: c.textPrimary,
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.12,
       shadowRadius: 12,

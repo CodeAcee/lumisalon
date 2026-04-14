@@ -12,6 +12,13 @@ import { PaperProvider } from "react-native-paper";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+  useFonts,
+} from "@expo-google-fonts/dm-sans";
 import { scheduleWorkingHourNotifications } from "../src/lib/workingHoursNotifications";
 import { useSettingsStore } from "../src/store/settings";
 import { useAuthStore } from "../src/store/auth";
@@ -139,7 +146,15 @@ export default function RootLayout() {
   const signOut = useAuthStore((s) => s.signOut);
   const loadAllData = useAppStore((s) => s.loadAllData);
 
+  const [fontsLoaded] = useFonts({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+  });
+
   useEffect(() => {
+    if (!fontsLoaded) return;
     SplashScreen.hideAsync();
 
     const { workingHours, notifications, language } =
@@ -183,7 +198,9 @@ export default function RootLayout() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>

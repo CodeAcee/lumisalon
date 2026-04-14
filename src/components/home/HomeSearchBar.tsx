@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
 import { Search, SlidersHorizontal } from "lucide-react-native";
-import { BorderRadius, FontSize } from "../../constants/theme";
+import { BorderRadius, FontSize, Spacing } from "../../constants/theme";
 import { useColors, useTheme } from "../../theme/ThemeContext";
 
 interface HomeSearchBarProps {
@@ -48,7 +48,7 @@ export function HomeSearchBar({
 
 function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
   return StyleSheet.create({
-    searchWrap: { paddingHorizontal: 16, paddingBottom: 12 },
+    searchWrap: { paddingHorizontal: Spacing.xl, paddingBottom: 12 },
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
