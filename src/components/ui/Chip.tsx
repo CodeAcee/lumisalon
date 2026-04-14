@@ -15,6 +15,9 @@ export function Chip({ label, active, onPress, color }: ChipProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!active }}
       style={[
         styles.chip,
         active && styles.active,

@@ -87,6 +87,8 @@ const en = {
   // ─── Home ─────────────────────────────────────────────────────────────────
   home: {
     allLocations: "All Locations",
+    switchLocation: "Tap to change active location",
+    editProfile: "Edit profile",
     searchPlaceholder: "Search procedures...",
     today: "Today",
     thisWeek: "This Week",

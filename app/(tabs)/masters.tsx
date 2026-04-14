@@ -102,7 +102,12 @@ export default function MastersScreen() {
       >
         <Text style={s.title}>{t("masters.title")}</Text>
 
-        <Pressable onPress={handlePress} style={[s.iconBtn, s.plusBtn]}>
+        <Pressable
+          onPress={handlePress}
+          style={[s.iconBtn, s.plusBtn]}
+          accessibilityRole="button"
+          accessibilityLabel={t("masters.addMaster")}
+        >
           {isGlassAvailable ? (
             <GlassView
               style={s.iconBtn}
@@ -132,7 +137,11 @@ export default function MastersScreen() {
           returnKeyType="search"
         />
         {masterSearch.length > 0 && (
-          <Pressable onPress={() => setMasterSearch("")}>
+          <Pressable
+            onPress={() => setMasterSearch("")}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.close")}
+          >
             <X size={16} color={colors.textTertiary} />
           </Pressable>
         )}

@@ -55,6 +55,9 @@ export function Button({
       onPressOut={() => {
         scale.value = withSpring(1, PressSpring);
       }}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       style={[
         styles.base,
         styles[variant],

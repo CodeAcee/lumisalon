@@ -24,7 +24,13 @@ export function HomeHeader({
 
   return (
     <View style={s.header}>
-      <Pressable style={s.locationBtn} onPress={onLocationPress}>
+      <Pressable
+        style={s.locationBtn}
+        onPress={onLocationPress}
+        accessibilityRole="button"
+        accessibilityLabel={activeLocationName ?? t("home.allLocations")}
+        accessibilityHint={t("home.switchLocation")}
+      >
         <MapPin size={14} color={colors.accent} />
         <Text style={s.locationBtnText} numberOfLines={1}>
           {activeLocationName ?? t("home.allLocations")}
@@ -32,7 +38,12 @@ export function HomeHeader({
         <ChevronDown size={14} color={colors.textSecondary} />
       </Pressable>
 
-      <Pressable onPress={onAvatarPress} style={s.avatarBtn}>
+      <Pressable
+        onPress={onAvatarPress}
+        style={s.avatarBtn}
+        accessibilityRole="button"
+        accessibilityLabel={t("home.editProfile")}
+      >
         {userAvatar ? (
           <Image
             source={{ uri: userAvatar }}
