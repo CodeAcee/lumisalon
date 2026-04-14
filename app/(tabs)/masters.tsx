@@ -110,7 +110,7 @@ export default function MastersScreen() {
               colorScheme={isDark ? "light" : "dark"}
               isInteractive
             >
-              <Plus size={24} color={isDark ? "#fff" : "#000"} />
+              <Plus size={24} color={colors.textOnAccent} />
             </GlassView>
           ) : (
             <Plus size={20} color={colors.textOnAccent} />
