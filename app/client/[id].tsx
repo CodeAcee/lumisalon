@@ -10,7 +10,7 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -34,7 +34,9 @@ import { useColors } from "../../src/theme/ThemeContext";
 import { Avatar } from "../../src/components/ui/Avatar";
 import { PositionBadge } from "../../src/components/ui/PositionBadge";
 import { useAppStore } from "../../src/store";
+import { proceduresService } from "../../src/services/supabase/procedures.service";
 import { format } from "date-fns";
+import type { Procedure } from "../../src/types";
 
 export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,13 +45,13 @@ export default function ClientDetailScreen() {
   const styles = makeStyles(colors);
   const { t } = useTranslation();
   const client = useAppStore((s) => s.clients.find((c) => c.id === id));
-  // Select the whole array (stable reference), filter in useMemo to avoid infinite re-renders
-  const allProcedures = useAppStore((s) => s.procedures);
-  const procedures = useMemo(
-    () => allProcedures.filter((p) => p.clientId === id),
-    [allProcedures, id],
-  );
   const masters = useAppStore((s) => s.masters);
+  // Fetch this client's full procedure history from the server (bypasses pagination)
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  useEffect(() => {
+    if (!id) return;
+    proceduresService.getByClientId(id).then(setProcedures).catch(() => {});
+  }, [id]);
   const locations = useAppStore((s) => s.locations);
   const removeClient = useAppStore((s) => s.removeClient);
 

@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { Procedure, Position } from '../../types';
+import { getUserId } from './utils';
 
 type Row = {
   id: string;
@@ -24,14 +25,6 @@ const fromRow = (row: Row): Procedure => ({
   notes: row.notes ?? undefined,
   photos: row.photos,
 });
-
-const getUserId = async (): Promise<string> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-  return user.id;
-};
 
 export interface GetPagedParams {
   page: number;
@@ -180,5 +173,27 @@ export const proceduresService = {
       .eq('id', id)
       .eq('user_id', user_id);
     if (error) throw error;
+  },
+
+  /** Fetch all procedures for a specific client (no pagination — used on detail screens). */
+  getByClientId: async (clientId: string): Promise<Procedure[]> => {
+    const { data, error } = await supabase
+      .from('procedures')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return (data as Row[]).map(fromRow);
+  },
+
+  /** Fetch all procedures for a specific master (no pagination — used on detail screens). */
+  getByMasterId: async (masterId: string): Promise<Procedure[]> => {
+    const { data, error } = await supabase
+      .from('procedures')
+      .select('*')
+      .eq('master_id', masterId)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return (data as Row[]).map(fromRow);
   },
 };

@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { Client } from '../../types';
+import { getUserId } from './utils';
 
 type Row = {
   id: string;
@@ -24,12 +25,6 @@ const fromRow = (row: Row): Client => ({
   category: row.category ?? undefined,
   locationId: row.location_id ?? undefined,
 });
-
-const getUserId = async (): Promise<string> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-  return user.id;
-};
 
 export const clientsService = {
   getAll: async (): Promise<Client[]> => {

@@ -10,7 +10,7 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -28,7 +28,9 @@ import { Avatar } from "../../src/components/ui/Avatar";
 import { PositionBadge } from "../../src/components/ui/PositionBadge";
 import { formatUkrainianPhone } from "../../src/components/ui/PhoneInput";
 import { useAppStore } from "../../src/store";
+import { proceduresService } from "../../src/services/supabase/procedures.service";
 import { format } from "date-fns";
+import type { Procedure } from "../../src/types";
 
 export default function MasterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,12 +39,13 @@ export default function MasterDetailScreen() {
   const styles = makeStyles(colors);
   const { t } = useTranslation();
   const master = useAppStore((s) => s.masters.find((m) => m.id === id));
-  const allProcedures = useAppStore((s) => s.procedures);
-  const procedures = useMemo(
-    () => allProcedures.filter((p) => p.masterId === id),
-    [allProcedures, id],
-  );
   const clients = useAppStore((s) => s.clients);
+  // Fetch this master's full procedure history from the server (bypasses pagination)
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  useEffect(() => {
+    if (!id) return;
+    proceduresService.getByMasterId(id).then(setProcedures).catch(() => {});
+  }, [id]);
   const locations = useAppStore((s) => s.locations);
   const removeMaster = useAppStore((s) => s.removeMaster);
 

@@ -322,6 +322,9 @@ const en = {
     selectMaster: "Select Master",
     selectLocation: "Select Location",
     save: "Save Procedure",
+    photoUploadFailed: "Photo Upload Failed",
+    photoUploadFailedMsg: "Could not upload photos. Check your connection and try again.",
+    saveFailed: "Failed to save. Please try again.",
   },
 
   // ─── Location Create ──────────────────────────────────────────────────────

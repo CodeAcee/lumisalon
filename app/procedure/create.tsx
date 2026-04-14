@@ -186,9 +186,8 @@ export default function CreateProcedureScreen() {
         } catch (uploadErr: any) {
           setSaving(false);
           Alert.alert(
-            "Photo Upload Failed",
-            uploadErr?.message ??
-              "Could not upload photos. Check your connection and try again.",
+            t("procedureForm.photoUploadFailed"),
+            uploadErr?.message ?? t("procedureForm.photoUploadFailedMsg"),
           );
           return;
         }
@@ -216,7 +215,7 @@ export default function CreateProcedureScreen() {
       router.back();
     } catch (err: any) {
       setSaving(false);
-      Alert.alert("Error", err?.message ?? "Failed to save. Please try again.");
+      Alert.alert(t("common.error"), err?.message ?? t("procedureForm.saveFailed"));
     }
   };
 
@@ -409,7 +408,7 @@ export default function CreateProcedureScreen() {
           setSelectedLocationId(id);
           setValue("masterId", "", { shouldValidate: false });
         }}
-        title="Select Location"
+        title={t("procedureForm.selectLocation")}
       />
 
       <MasterSelectSheet
