@@ -18,7 +18,7 @@ export const lightColors = {
   tagNails: "#E4DAF0",
   tagSkin: "#DAF0E4",
   tagLashes: "#F0DAE4",
-  textOnAccent: "#FFFFFF",
+  textOnAccent: "#2D2321",
   textPrimary: "#2D2321",
   textSecondary: "#8C7B73",
   textTertiary: "#B5A49C",

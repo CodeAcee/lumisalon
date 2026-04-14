@@ -179,3 +179,4 @@ Pulse animation between `colors.skeleton` → `colors.skeletonHighlight` using `
 | 2026-04-14 | Added motion guidelines section | App uses Reanimated throughout but had no documented conventions — caused inconsistent durations and easing across components. |
 | 2026-04-14 | Confirmed grid-disciplined layout + `paddingHorizontal: 20` as canonical screen edge | Already consistent in code, now explicit in docs so it doesn't drift. |
 | 2026-04-14 | Kept existing cream color system | `#D4A88C` accent + warm neutral backgrounds are well-considered and appropriate for the salon context. No change needed. |
+| 2026-04-14 | Changed `textOnAccent` light mode: `#FFFFFF` → `#2D2321` | White on `#D4A88C` terracotta = 2.05:1 contrast ratio — fails WCAG AA (4.5:1 required). Dark brown `#2D2321` gives 7.7:1. Dark mode keeps `#1A1614`. |
