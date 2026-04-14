@@ -1,17 +1,16 @@
-import { DynamicColorIOS } from "react-native";
 import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { useTranslation } from "react-i18next";
+
+// Brand accent — same in both light and dark themes
+const ACCENT = "#D4A88C";
 
 export default function TabLayout() {
   const { t } = useTranslation();
 
   return (
     <NativeTabs
-      labelStyle={{
-        fontSize: 10,
-        color: DynamicColorIOS({ dark: "white", light: "black" }),
-      }}
-      tintColor={DynamicColorIOS({ dark: "white", light: "black" })}
+      labelStyle={{ fontSize: 10 }}
+      tintColor={ACCENT}
     >
       <NativeTabs.Trigger name="index">
         <Label>{t("tabs.home")}</Label>
