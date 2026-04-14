@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { FontSize, BorderRadius } from "../../constants/theme";
+import { FontSize, BorderRadius, PressSpring, PRESS_SCALE } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 import { PositionBadge } from "../ui/PositionBadge";
 import { format } from "date-fns";
@@ -59,10 +59,10 @@ export function ProcedureCard({
     <AnimatedPressable
       onPress={onPress}
       onPressIn={() => {
-        scale.value = withSpring(0.97);
+        scale.value = withSpring(PRESS_SCALE, PressSpring);
       }}
       onPressOut={() => {
-        scale.value = withSpring(1);
+        scale.value = withSpring(1, PressSpring);
       }}
       style={[s.card, animatedStyle]}
       accessibilityRole="button"

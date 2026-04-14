@@ -7,6 +7,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Plus } from "lucide-react-native";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
+import { PressSpring, PRESS_SCALE } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -29,10 +30,10 @@ export function FAB({ onPress, style }: FABProps) {
       <AnimatedPressable
         onPress={onPress}
         onPressIn={() => {
-          scale.value = withSpring(0.9, { damping: 12 });
+          scale.value = withSpring(PRESS_SCALE, PressSpring);
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, { damping: 12 });
+          scale.value = withSpring(1, PressSpring);
         }}
         style={[style, animStyle, isGlassAvailable && styles.fabGlass]}
         accessibilityRole="button"

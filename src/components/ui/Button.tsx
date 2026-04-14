@@ -11,7 +11,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { BorderRadius, FontSize, Spacing } from "../../constants/theme";
+import { BorderRadius, FontSize, Spacing, PressSpring, PRESS_SCALE } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -50,10 +50,10 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       onPressIn={() => {
-        scale.value = withSpring(0.97);
+        scale.value = withSpring(PRESS_SCALE, PressSpring);
       }}
       onPressOut={() => {
-        scale.value = withSpring(1);
+        scale.value = withSpring(1, PressSpring);
       }}
       style={[
         styles.base,

@@ -71,6 +71,11 @@ export const darkColors = {
 // Backward-compatible alias
 export const Colors = lightColors;
 
+/** Shared spring config for press feedback across all interactive elements */
+export const PressSpring = { damping: 15, stiffness: 350 } as const;
+/** Scale target for press-in feedback */
+export const PRESS_SCALE = 0.97 as const;
+
 export const Fonts = {
   regular: "DMSans_400Regular",
   medium: "DMSans_500Medium",
