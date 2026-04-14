@@ -42,6 +42,30 @@ Key routing rules:
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
 
+## Testing
+
+**No test framework is installed yet.** When bootstrap is requested, use:
+
+```bash
+npx expo install jest-expo @testing-library/react-native @types/jest
+```
+
+Add to `package.json`:
+```json
+"scripts": { "test": "jest" },
+"jest": { "preset": "jest-expo" }
+```
+
+**Priority tests (in order):**
+1. `src/services/supabase/utils.ts` — `getUserId()` throws when `getUser()` returns null user
+2. `src/store/app.ts` — `getFilteredClients()` search by name / phone / email
+3. `src/store/app.ts` — `getFilteredMasters()` search by name / position + location filter
+4. `src/store/app.ts` — `loadProceduresPage()` guard: no-op when `proceduresLoading=true`
+5. `src/store/app.ts` — `loadProceduresPage()` guard: no-op when `!reset && !proceduresHasMore`
+6. `src/services/supabase/procedures.service.ts` — `update/delete` include `.eq('user_id', …)`
+
+E2E test candidates (auth, create/update/delete flows): use Maestro or Detox when ready.
+
 ## Design System
 
 Always read DESIGN.md before making any visual or UI decisions.

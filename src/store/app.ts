@@ -10,9 +10,6 @@ import { locationsService } from '../services/supabase/locations.service';
 
 const PROCEDURES_PAGE_SIZE = 20;
 
-// Module-scope timer so we can cancel a pending debounce from any action call.
-let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
 interface AppState {
   // ── Data ──────────────────────────────────────────────────
   clients: Client[];
@@ -115,7 +112,11 @@ interface AppState {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      // Timer scoped to this store factory instance — survives Fast Refresh correctly.
+      let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      return {
       // ── Initial state ──────────────────────────────────────
       clients: [],
       masters: [],
@@ -370,7 +371,8 @@ export const useAppStore = create<AppState>()(
 
       getMastersForLocation: (locationId) =>
         get().masters.filter((m) => m.locationIds?.includes(locationId)),
-    }),
+      };
+    },
     {
       name: 'lumisalon-app',
       version: 4,

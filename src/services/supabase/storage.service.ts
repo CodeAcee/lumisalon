@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const BUCKET = 'images';
 
@@ -18,7 +19,22 @@ export const STORAGE_LIMITS = {
 } as const;
 
 /**
+ * Compress a local image URI to max 1200px wide at 80% JPEG quality.
+ * Skips already-remote URLs (they're already processed).
+ * Keeps PNGs as JPEG for consistent compression.
+ */
+async function compressImage(localUri: string): Promise<string> {
+  const result = await ImageManipulator.manipulateAsync(
+    localUri,
+    [{ resize: { width: 1200 } }],
+    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+  );
+  return result.uri;
+}
+
+/**
  * Upload a local file:// URI to Supabase Storage.
+ * Images are compressed to max 1200px / 80% JPEG quality before upload.
  * Uses ArrayBuffer — the most reliable approach in React Native.
  * Returns the public HTTPS URL of the uploaded file.
  */
@@ -30,7 +46,10 @@ export async function uploadImage(
   // Already a remote URL — skip upload (e.g. existing photo on edit)
   if (localUri.startsWith('http')) return localUri;
 
-  const response = await fetch(localUri);
+  // Compress before upload to reduce storage costs and improve load times
+  const compressedUri = await compressImage(localUri);
+
+  const response = await fetch(compressedUri);
   const arrayBuffer = await response.arrayBuffer();
 
   if (arrayBuffer.byteLength > limitBytes) {
@@ -38,8 +57,9 @@ export async function uploadImage(
     throw new Error(`Image exceeds the ${mb} MB limit. Please choose a smaller file.`);
   }
 
-  const ext = localUri.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+  // Compression always produces JPEG regardless of the source extension
+  const ext = 'jpg';
+  const mime = 'image/jpeg';
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
