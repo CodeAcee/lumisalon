@@ -19,6 +19,7 @@ import {
   Clock,
   Bell,
   Globe,
+  Tag,
 } from "lucide-react-native";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors } from "../../src/theme/ThemeContext";
@@ -132,6 +133,16 @@ const handlePress = (screen: string) => {
           {t("settings.preferencesSection")}
         </Text>
         <View style={styles.card}>
+          <Pressable
+            style={styles.row}
+            onPress={() => handlePress("/settings/services")}
+          >
+            <Tag size={20} color={colors.textSecondary} />
+            <Text style={styles.rowLabel}>{t("settings.services")}</Text>
+            <View style={{ flex: 1 }} />
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
+          <View style={styles.rowDivider} />
           <Pressable
             style={styles.row}
             onPress={() => handlePress("/settings/appearance")}

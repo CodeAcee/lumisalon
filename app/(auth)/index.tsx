@@ -242,9 +242,7 @@ function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
-      backgroundColor: isDark
-        ? "rgba(26, 22, 20, 0.55)"
-        : "rgba(212, 168, 140, 0.82)",
+      backgroundColor: isDark ? "rgba(0,0,0,0.45)" : `${c.accent}CC`,
     },
     logoBox: {
       width: 72,
@@ -368,7 +366,7 @@ function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: c.white,
+      backgroundColor: c.bgCard,
       borderWidth: 1,
       borderColor: c.border,
       borderRadius: BorderRadius.lg,

@@ -35,6 +35,7 @@ import { MasterSelectSheet } from "../../src/components/procedure/MasterSelectSh
 import { ClientSelectSheet } from "../../src/components/procedure/ClientSelectSheet";
 import { PhotoStrip } from "../../src/components/procedure/PhotoStrip";
 import { PositionPicker } from "../../src/components/procedure/PositionPicker";
+import { ServicePickerSheet } from "../../src/components/procedure/ServicePickerSheet";
 import { useAppStore, useUIStore } from "../../src/store";
 import { procedureSchema, type ProcedureFormData } from "../../src/lib/schemas";
 import { uploadImages } from "../../src/services/supabase/storage.service";
@@ -109,7 +110,13 @@ export default function CreateProcedureScreen() {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const [servicePickerOpen, setServicePickerOpen] = useState(false);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(
+    existingProc?.serviceIds ?? [],
+  );
   const [saving, setSaving] = useState(false);
+
+  const services = useAppStore((st) => st.services);
 
   useEffect(() => {
     if (isEditMode && existingProc?.photos) {
@@ -193,11 +200,20 @@ export default function CreateProcedureScreen() {
         }
       }
 
+      // Build human-readable services from catalog names if any, else fall back to positions
+      const linkedServiceNames =
+        selectedServiceIds.length > 0
+          ? services
+              .filter((sv) => selectedServiceIds.includes(sv.id))
+              .map((sv) => sv.name)
+          : (data.positions ?? []).map((p) => `${p} Service`);
+
       const procData = {
         clientId: data.clientId,
         masterId: data.masterId,
         locationId: selectedLocationId ?? undefined,
-        services: (data.positions ?? []).map((p) => `${p} Service`),
+        services: linkedServiceNames,
+        serviceIds: selectedServiceIds,
         positions: (data.positions ?? []) as Position[],
         notes: data.notes ?? undefined,
         photos: uploadedPhotos,
@@ -215,7 +231,10 @@ export default function CreateProcedureScreen() {
       router.back();
     } catch (err: any) {
       setSaving(false);
-      Alert.alert(t("common.error"), err?.message ?? t("procedureForm.saveFailed"));
+      Alert.alert(
+        t("common.error"),
+        err?.message ?? t("procedureForm.saveFailed"),
+      );
     }
   };
 
@@ -340,7 +359,7 @@ export default function CreateProcedureScreen() {
             <Text style={s.errorText}>{errors.clientId.message}</Text>
           )}
 
-          {/* Services */}
+          {/* Services
           <Text style={s.sectionLabel}>
             {t("procedureForm.services").toUpperCase()}
           </Text>
@@ -350,7 +369,31 @@ export default function CreateProcedureScreen() {
             masterName={selectedMasterObj?.name}
             onToggle={togglePosition}
             error={errors.positions?.message}
-          />
+          /> */}
+
+          {/* Catalog services — optional, for revenue tracking */}
+          <Text style={s.sectionLabel}>
+            {t("services.title").toUpperCase()}
+          </Text>
+          <Pressable
+            style={s.selectorCard}
+            onPress={() => setServicePickerOpen(true)}
+          >
+            <Text
+              style={[
+                s.selectorText,
+                selectedServiceIds.length > 0 && s.selectorSelected,
+              ]}
+            >
+              {selectedServiceIds.length > 0
+                ? services
+                    .filter((sv) => selectedServiceIds.includes(sv.id))
+                    .map((sv) => sv.name)
+                    .join(", ")
+                : t("services.selectServices")}
+            </Text>
+            <ChevronRight size={18} color={colors.textTertiary} />
+          </Pressable>
 
           {/* Notes */}
           <Text style={s.sectionLabel}>
@@ -393,7 +436,7 @@ export default function CreateProcedureScreen() {
             title={
               isEditMode ? t("common.save") : t("procedureForm.createTitle")
             }
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)}
             loading={saving}
             icon={<Sparkles size={18} color={colors.textOnAccent} />}
           />
@@ -428,6 +471,13 @@ export default function CreateProcedureScreen() {
           setValue("clientId", id, { shouldValidate: true });
           setClientModalOpen(false);
         }}
+      />
+
+      <ServicePickerSheet
+        visible={servicePickerOpen}
+        selectedIds={selectedServiceIds}
+        onConfirm={setSelectedServiceIds}
+        onClose={() => setServicePickerOpen(false)}
       />
     </View>
   );

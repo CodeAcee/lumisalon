@@ -18,7 +18,6 @@ import { FilterSheet } from "../../src/components/home/FilterSheet";
 import { ProcedureSkeleton } from "../../src/components/ui/SkeletonCard";
 import { LocationSheet } from "../../src/components/ui/LocationSheet";
 import { useAppStore, useAuthStore } from "../../src/store";
-import { format } from "date-fns";
 import { FAB } from "../../src/components/home/FAB";
 import { HomeHeader } from "../../src/components/home/HomeHeader";
 import { HomeSearchBar } from "../../src/components/home/HomeSearchBar";
@@ -65,14 +64,7 @@ export default function HomeScreen() {
 
   const activeLocation = locations.find((l) => l.id === activeLocationId);
 
-  const todayStr = format(new Date(), "yyyy-MM-dd");
-  const todayCount = useMemo(
-    () =>
-      procedures.filter(
-        (p) => format(new Date(p.date), "yyyy-MM-dd") === todayStr,
-      ).length,
-    [procedures, todayStr],
-  );
+  const todayRevenue = useAppStore((state) => state.todayRevenue);
 
   const mastersCount = useMemo(
     () =>
@@ -112,13 +104,13 @@ export default function HomeScreen() {
   const listHeader = useMemo(
     () => (
       <>
-        <StatsRow todayCount={todayCount} mastersCount={mastersCount} />
+        <StatsRow todayRevenue={todayRevenue} mastersCount={mastersCount} />
         <View style={s.sectionHeader}>
           <Text style={s.sectionTitle}>{t("home.recentProcedures")}</Text>
         </View>
       </>
     ),
-    [todayCount, mastersCount, s, t],
+    [todayRevenue, mastersCount, s, t],
   );
 
   const listEmpty = useMemo(() => {

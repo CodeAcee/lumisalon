@@ -10,11 +10,12 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useColors } from "../../theme/ThemeContext";
-import { AppSheet } from "./AppSheet";
+import { AppSheet, type AppSheet as AppSheetRef } from "./AppSheet";
 import { FontSize, BorderRadius } from "../../constants/theme";
 import { useAppStore } from "../../store";
 
 interface LocationSheetProps {
+  ref?: React.RefObject<AppSheetRef>;
   visible: boolean;
   onClose: () => void;
   selectedId: string | null | undefined;
@@ -28,6 +29,7 @@ interface LocationSheetProps {
 }
 
 export function LocationSheet({
+  ref,
   visible,
   onClose,
   selectedId,
@@ -61,6 +63,7 @@ export function LocationSheet({
 
   return (
     <AppSheet
+      ref={ref}
       snapPoints={["60%"]}
       portal={portal}
       enableDynamicSizing={false}
