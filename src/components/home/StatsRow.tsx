@@ -1,19 +1,24 @@
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Calendar, Users } from "lucide-react-native";
+import { TrendingUp, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { BorderRadius, FontSize } from "../../constants/theme";
 import { useColors, useTheme } from "../../theme/ThemeContext";
 
 interface StatsRowProps {
-  todayCount: number;
+  todayRevenue: number;
   mastersCount: number;
 }
 
-export function StatsRow({ todayCount, mastersCount }: StatsRowProps) {
+export function StatsRow({ todayRevenue, mastersCount }: StatsRowProps) {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const s = makeStyles(colors, isDark);
+
+  const revenueLabel =
+    todayRevenue === 0
+      ? t("services.noPricesSet")
+      : `€${todayRevenue.toFixed(2)}`;
 
   return (
     <View style={s.statsRow}>
@@ -21,9 +26,11 @@ export function StatsRow({ todayCount, mastersCount }: StatsRowProps) {
         entering={FadeInDown.delay(50).duration(400)}
         style={s.statCard}
       >
-        <Calendar size={18} color={colors.accent} />
-        <Text style={s.statValue}>{todayCount}</Text>
-        <Text style={s.statLabel}>{t("home.today")}</Text>
+        <TrendingUp size={18} color={colors.accent} />
+        <Text style={s.statValue} numberOfLines={1} adjustsFontSizeToFit>
+          {revenueLabel}
+        </Text>
+        <Text style={s.statLabel}>{t("services.revenueToday")}</Text>
       </Animated.View>
       <Animated.View
         entering={FadeInDown.delay(150).duration(400)}

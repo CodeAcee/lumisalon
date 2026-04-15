@@ -1,16 +1,15 @@
 import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { useTranslation } from "react-i18next";
-
-// Brand accent — same in both light and dark themes
-const ACCENT = "#D4A88C";
+import { useColors } from "../../src/theme/ThemeContext";
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const colors = useColors();
 
   return (
     <NativeTabs
       labelStyle={{ fontSize: 10 }}
-      tintColor={ACCENT}
+      tintColor={colors.accent}
     >
       <NativeTabs.Trigger name="index">
         <Label>{t("tabs.home")}</Label>

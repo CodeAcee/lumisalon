@@ -12,7 +12,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, X } from "lucide-react-native";
-import { AppSheet } from "../ui/AppSheet";
+import { AppSheet, type AppSheet as AppSheetRef } from "../ui/AppSheet";
 import { Chip } from "../ui/Chip";
 import { FontSize, BorderRadius } from "../../constants/theme";
 import { useColors, useTheme } from "../../theme/ThemeContext";
@@ -30,11 +30,12 @@ const POSITIONS: Position[] = [
 ];
 
 interface Props {
+  ref?: React.RefObject<AppSheetRef>;
   visible: boolean;
   onClose: () => void;
 }
 
-export function FilterSheet({ visible, onClose }: Props) {
+export function FilterSheet({ ref, visible, onClose }: Props) {
   const colors = useColors();
   const { isDark } = useTheme();
   const s = styles(colors);
@@ -69,7 +70,7 @@ export function FilterSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <AppSheet snapPoints={["70%"]} index={0} portal onClose={onClose}>
+    <AppSheet ref={ref} snapPoints={["70%"]} index={0} portal onClose={onClose}>
       <BottomSheetScrollView
         contentContainerStyle={[
           s.scrollContent,

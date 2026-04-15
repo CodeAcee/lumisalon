@@ -32,10 +32,10 @@ const isGlassAvailable = isGlassEffectAPIAvailable();
 
 export default function ClientsScreen() {
   const colors = useColors();
-  const s = useMemo(() => makeStyles(colors), [colors]);
+  const { isDark } = useTheme();
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { isDark } = useTheme();
   const clientSearch = useAppStore((state) => state.clientSearch);
   const setClientSearch = useAppStore((state) => state.setClientSearch);
   const getFilteredClients = useAppStore((state) => state.getFilteredClients);
@@ -65,11 +65,13 @@ export default function ClientsScreen() {
         </View>
         <Text style={s.emptyTitle}>{t("clients.noClients")}</Text>
         <Text style={s.emptyHint}>{t("clients.noClientsHint")}</Text>
-        <Button
-          title={t("clients.addClient")}
-          onPress={() => router.push("/client/create")}
-          icon={<Plus size={16} color={colors.textOnAccent} />}
-        />
+        <View style={s.emptyBtnWrap}>
+          <Button
+            title={t("clients.addClient")}
+            onPress={() => router.push("/client/create")}
+            icon={<Plus size={16} color={colors.textOnAccent} />}
+          />
+        </View>
       </View>
     ),
     [s, t, colors],
@@ -145,8 +147,14 @@ export default function ClientsScreen() {
       </Animated.View>
 
       {loadError && (
-        <Pressable style={s.errorBanner} onPress={loadAllData} accessibilityRole="button">
-          <Text style={s.errorBannerText}>{t("common.error")} — {t("common.tapToRetry")}</Text>
+        <Pressable
+          style={s.errorBanner}
+          onPress={loadAllData}
+          accessibilityRole="button"
+        >
+          <Text style={s.errorBannerText}>
+            {t("common.error")} — {t("common.tapToRetry")}
+          </Text>
         </Pressable>
       )}
 
@@ -162,7 +170,6 @@ export default function ClientsScreen() {
           data={filtered}
           renderItem={renderClient}
           keyExtractor={keyExtractor}
-          estimatedItemSize={80}
           ItemSeparatorComponent={ItemSeparator}
           ListEmptyComponent={ListEmpty}
           contentContainerStyle={s.list}
@@ -177,7 +184,7 @@ export default function ClientsScreen() {
 
 const SKELETON_KEYS = [0, 1, 2, 3, 4];
 
-function makeStyles(c: ReturnType<typeof useColors>) {
+function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bgPrimary },
     header: {
@@ -205,13 +212,20 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     searchContainer: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgSearch,
-      borderRadius: BorderRadius.md,
-      height: 44,
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.xl,
+      height: 48,
       paddingHorizontal: 16,
       gap: 8,
       marginHorizontal: 20,
       marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.75)",
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 2,
     },
     searchInput: { flex: 1, fontSize: FontSize.body, color: c.textPrimary },
     errorBanner: {
@@ -262,6 +276,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textTertiary,
       textAlign: "center",
       marginBottom: 8,
+    },
+    emptyBtnWrap: {
+      width: "100%",
     },
   });
 }

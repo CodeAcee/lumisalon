@@ -133,6 +133,7 @@ const en = {
     accountSection: "ACCOUNT",
     appearance: "Appearance",
     appIcon: "App Icon",
+    services: "Services",
     workingHours: "Working Hours",
     notifications: "Notifications",
     language: "Language",
@@ -357,6 +358,30 @@ const en = {
     positions: "Position",
     clearAll: "Clear All",
     apply: "Apply Filters",
+  },
+
+  // ─── Services ─────────────────────────────────────────────────────────────
+  services: {
+    title: "Services",
+    noServices: "No services yet",
+    noServicesHint: "Add your first service to start tracking revenue",
+    addService: "Add Service",
+    newService: "New Service",
+    editService: "Edit Service",
+    name: "Service Name",
+    position: "Specialization",
+    price: "Price",
+    pricePlaceholder: "0.00",
+    duration: "Duration (min)",
+    durationPlaceholder: "e.g. 60",
+    save: "Save Service",
+    deleteService: "Delete Service",
+    deleteConfirm: "Archive this service? It won't appear in new procedures but historical revenue is preserved.",
+    revenueToday: "Revenue Today",
+    noPricesSet: "No prices set",
+    selectServices: "Select Services",
+    total: "Total",
+    noServicesForPicker: "No services yet — add them in Settings > Services",
   },
 
   // ─── App Icon ─────────────────────────────────────────────────────────────

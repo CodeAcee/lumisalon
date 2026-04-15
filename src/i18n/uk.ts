@@ -137,6 +137,7 @@ const uk = {
     accountSection: "АКАУНТ",
     appearance: "Зовнішній вигляд",
     appIcon: "Іконка застосунку",
+    services: "Послуги",
     workingHours: "Робочі години",
     notifications: "Сповіщення",
     language: "Мова",
@@ -361,6 +362,30 @@ const uk = {
     positions: "Спеціалізація",
     clearAll: "Очистити",
     apply: "Застосувати",
+  },
+
+  // ─── Services ─────────────────────────────────────────────────────────────
+  services: {
+    title: "Послуги",
+    noServices: "Послуг ще немає",
+    noServicesHint: "Додайте першу послугу, щоб відстежувати дохід",
+    addService: "Додати послугу",
+    newService: "Нова послуга",
+    editService: "Редагувати послугу",
+    name: "Назва послуги",
+    position: "Спеціалізація",
+    price: "Ціна",
+    pricePlaceholder: "0.00",
+    duration: "Тривалість (хв)",
+    durationPlaceholder: "напр. 60",
+    save: "Зберегти послугу",
+    deleteService: "Видалити послугу",
+    deleteConfirm: "Архівувати цю послугу? Вона не з'являтиметься в нових процедурах, але дані про дохід збережуться.",
+    revenueToday: "Дохід сьогодні",
+    noPricesSet: "Ціни не вказані",
+    selectServices: "Вибрати послуги",
+    total: "Разом",
+    noServicesForPicker: "Послуг ще немає — додайте їх у Налаштування > Послуги",
   },
 
   // ─── App Icon ─────────────────────────────────────────────────────────────

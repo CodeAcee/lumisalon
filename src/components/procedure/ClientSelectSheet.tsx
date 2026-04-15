@@ -11,10 +11,11 @@ import { useState } from "react";
 import { FontSize, BorderRadius } from "../../constants/theme";
 import { useColors } from "../../theme/ThemeContext";
 import { Avatar } from "../ui/Avatar";
-import { AppSheet } from "../ui/AppSheet";
+import { AppSheet, type AppSheet as AppSheetRef } from "../ui/AppSheet";
 import type { Client } from "../../types";
 
 interface Props {
+  ref?: React.RefObject<AppSheetRef>;
   visible: boolean;
   onClose: () => void;
   clients: Client[];
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function ClientSelectSheet({
+  ref,
   visible,
   onClose,
   clients,
@@ -47,6 +49,7 @@ export function ClientSelectSheet({
 
   return (
     <AppSheet
+      ref={ref}
       snapPoints={["85%"]}
       index={0}
       onClose={onClose}

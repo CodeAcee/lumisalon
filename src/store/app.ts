@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { format } from 'date-fns';
 import type { Client, Master, Procedure, Position, Location } from '../types';
-import type { ServiceResponse, ProcedureFilters } from '../types/dto';
+import type { ServiceResponse, CreateServiceRequest, UpdateServiceRequest, ProcedureFilters } from '../types/dto';
 import { clientsService } from '../services/supabase/clients.service';
 import { mastersService } from '../services/supabase/masters.service';
 import { proceduresService } from '../services/supabase/procedures.service';
 import { locationsService } from '../services/supabase/locations.service';
+import { servicesService } from '../services/supabase/services.service';
+import { supabase } from '../lib/supabase';
 
 const PROCEDURES_PAGE_SIZE = 20;
 
@@ -22,6 +25,8 @@ interface AppState {
   procedures: Procedure[];
   services: ServiceResponse[];
   locations: Location[];
+  /** Revenue sum for today, loaded via server RPC (not paginated client sum). */
+  todayRevenue: number;
   dataLoaded: boolean;
 
   // ── Procedures pagination ─────────────────────────────────
@@ -48,8 +53,11 @@ interface AppState {
   filterSheetOpen: boolean;
 
   // ── Actions ───────────────────────────────────────────────
-  /** Initial bootstrap: load clients, masters, locations, then first procedure page. */
+  /** Initial bootstrap: load clients, masters, locations, services, then first procedure page. */
   loadAllData: () => Promise<void>;
+
+  /** Reload today's revenue from the server RPC (not a paginated client-side sum). */
+  loadTodayRevenue: () => Promise<void>;
 
   /**
    * Load the next page of procedures (or reset to page 0 when reset=true).
@@ -86,6 +94,9 @@ interface AppState {
   // Service actions
   setServices: (services: ServiceResponse[]) => void;
   addService: (service: ServiceResponse) => void;
+  createService: (data: CreateServiceRequest) => Promise<ServiceResponse>;
+  updateService: (id: string, data: UpdateServiceRequest) => Promise<void>;
+  archiveService: (id: string) => Promise<void>;
 
   // Filter actions
   /** Updates search text and debounces a full procedure list reset + reload. */
@@ -123,6 +134,7 @@ export const useAppStore = create<AppState>()(
       procedures: [],
       services: [],
       locations: [],
+      todayRevenue: 0,
       dataLoaded: false,
 
       proceduresPage: 0,
@@ -143,17 +155,39 @@ export const useAppStore = create<AppState>()(
       // ── Bootstrap ─────────────────────────────────────────
       loadAllData: async () => {
         try {
-          const [clients, masters, locations] = await Promise.all([
+          const [clients, masters, locations, services] = await Promise.all([
             clientsService.getAll(),
             mastersService.getAll(),
             locationsService.getAll(),
+            servicesService.getAll(),
           ]);
           // Set reference data first so search can resolve IDs on the first page load.
-          set({ clients, masters, locations, loadError: null });
-          await get().loadProceduresPage(true);
+          set({ clients, masters, locations, services, loadError: null });
+          await Promise.all([
+            get().loadProceduresPage(true),
+            get().loadTodayRevenue(),
+          ]);
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Failed to load data';
           set({ dataLoaded: true, loadError: msg });
+        }
+      },
+
+      loadTodayRevenue: async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { activeLocationId } = get();
+          const today = format(new Date(), 'yyyy-MM-dd');
+          const { data, error } = await supabase.rpc('get_revenue_today', {
+            p_user_id: user.id,
+            p_location_id: activeLocationId ?? null,
+            p_date: today,
+          });
+          if (error) throw error;
+          set({ todayRevenue: Number(data) ?? 0 });
+        } catch {
+          // Revenue failing silently is acceptable — home screen degrades gracefully.
         }
       },
 
@@ -243,6 +277,7 @@ export const useAppStore = create<AppState>()(
       setActiveLocationId: (activeLocationId) => {
         set({ activeLocationId });
         get().loadProceduresPage(true);
+        get().loadTodayRevenue();
       },
 
       // ── Client actions ────────────────────────────────────
@@ -285,8 +320,14 @@ export const useAppStore = create<AppState>()(
       setProcedures: (procedures) => set({ procedures }),
       addProcedure: async (procedure) => {
         const created = await proceduresService.create(procedure);
-        // Prepend so the new item appears at the top without a full reload.
-        set((s) => ({ procedures: [created, ...s.procedures] }));
+        // Insert in date-descending order so the list stays sorted correctly.
+        set((s) => {
+          const all = [created, ...s.procedures];
+          all.sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
+          return { procedures: all };
+        });
+        // Reload revenue in background — don't block the caller.
+        get().loadTodayRevenue();
         return created;
       },
       updateProcedure: async (id, data) => {
@@ -304,6 +345,23 @@ export const useAppStore = create<AppState>()(
       setServices: (services) => set({ services }),
       addService: (service) =>
         set((s) => ({ services: [...s.services, service] })),
+      createService: async (data) => {
+        const created = await servicesService.create(data);
+        set((s) => ({ services: [...s.services, created] }));
+        return created;
+      },
+      updateService: async (id, data) => {
+        const updated = await servicesService.update(id, data);
+        set((s) => ({
+          services: s.services.map((sv) => (sv.id === id ? updated : sv)),
+        }));
+      },
+      archiveService: async (id) => {
+        await servicesService.archive(id);
+        set((s) => ({
+          services: s.services.filter((sv) => sv.id !== id),
+        }));
+      },
 
       // ── Filter actions ────────────────────────────────────
       setHomeSearch: (homeSearch) => {

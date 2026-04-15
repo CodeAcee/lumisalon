@@ -49,6 +49,18 @@ create table if not exists public.clients (
   created_at  timestamptz default now()
 );
 
+-- services catalog
+create table if not exists public.services (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references auth.users on delete cascade not null,
+  name       text not null,
+  position   text not null,
+  price      numeric(10,2) not null default 0,
+  duration   int,
+  archived   boolean not null default false,
+  created_at timestamptz default now()
+);
+
 -- procedures
 create table if not exists public.procedures (
   id          uuid primary key default gen_random_uuid(),
@@ -58,6 +70,7 @@ create table if not exists public.procedures (
   location_id text,
   date        text not null,
   services    text[] not null default '{}',
+  service_ids uuid[] not null default '{}',
   positions   text[] not null default '{}',
   notes       text,
   photos      text[] not null default '{}',
@@ -97,6 +110,55 @@ create policy "clients_all" on public.clients for all using (auth.uid() = user_i
 -- procedures
 drop policy if exists "procedures_all" on public.procedures;
 create policy "procedures_all" on public.procedures for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- services
+alter table public.services enable row level security;
+drop policy if exists "services_all" on public.services;
+create policy "services_all" on public.services for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
+-- is_pro flag on profiles (for analytics paywall)
+-- ============================================================
+
+alter table public.profiles add column if not exists is_pro boolean not null default false;
+
+-- ============================================================
+-- Ensure service_ids column exists (migration safety)
+-- ============================================================
+
+alter table public.procedures add column if not exists service_ids uuid[] not null default '{}';
+
+-- ============================================================
+-- Revenue RPC
+-- ============================================================
+
+create or replace function public.get_revenue_today(
+  p_user_id   uuid,
+  p_location_id text,
+  p_date      text
+)
+returns numeric
+language sql
+security definer
+set search_path = ''
+as $$
+  select coalesce(sum(s.price), 0)
+  from public.procedures pr
+  join unnest(pr.service_ids) sid on true
+  join public.services s on s.id = sid
+  where pr.user_id = p_user_id
+    and pr.date like (p_date || '%')
+    and (p_location_id is null or pr.location_id = p_location_id)
+    and s.archived = false;
+$$;
+
+-- ============================================================
+-- Indexes
+-- ============================================================
+
+create index if not exists procedures_user_date_idx on public.procedures (user_id, date);
+create index if not exists procedures_user_master_idx on public.procedures (user_id, master_id);
+create index if not exists services_user_archived_idx on public.services (user_id, archived);
 
 -- ============================================================
 -- Trigger: auto-create profile row on new user signup

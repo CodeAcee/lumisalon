@@ -115,15 +115,23 @@ export interface ServiceResponse {
   id: string;
   name: string;
   position: Position;
+  price: number;
   duration?: number;
-  description?: string;
+  archived?: boolean;
 }
 
 export interface CreateServiceRequest {
   name: string;
   position: Position;
+  price: number;
   duration?: number;
-  description?: string;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  position?: Position;
+  price?: number;
+  duration?: number;
 }
 
 export interface ServiceListResponse {

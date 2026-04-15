@@ -9,6 +9,7 @@ type Row = {
   location_id: string | null;
   date: string;
   services: string[];
+  service_ids: string[];
   positions: string[];
   notes: string | null;
   photos: string[];
@@ -21,6 +22,7 @@ const fromRow = (row: Row): Procedure => ({
   locationId: row.location_id ?? undefined,
   date: row.date,
   services: row.services,
+  serviceIds: row.service_ids?.length ? row.service_ids : undefined,
   positions: row.positions as Position[],
   notes: row.notes ?? undefined,
   photos: row.photos,
@@ -132,6 +134,7 @@ export const proceduresService = {
         location_id: procedure.locationId ?? null,
         date: procedure.date,
         services: procedure.services,
+        service_ids: procedure.serviceIds ?? [],
         positions: procedure.positions,
         notes: procedure.notes ?? null,
         photos: procedure.photos ?? [],
@@ -150,6 +153,7 @@ export const proceduresService = {
     if (updates.locationId !== undefined) patch.location_id = updates.locationId ?? null;
     if (updates.date !== undefined) patch.date = updates.date;
     if (updates.services !== undefined) patch.services = updates.services;
+    if (updates.serviceIds !== undefined) patch.service_ids = updates.serviceIds;
     if (updates.positions !== undefined) patch.positions = updates.positions;
     if (updates.notes !== undefined) patch.notes = updates.notes ?? null;
     if (updates.photos !== undefined) patch.photos = updates.photos;

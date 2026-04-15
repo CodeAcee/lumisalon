@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, Plus, X, Scissors } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
-import { useFocusEffect } from "expo-router";
 import { FontSize, BorderRadius } from "../../src/constants/theme";
 import { useColors, useTheme } from "../../src/theme/ThemeContext";
 import { MasterCard } from "../../src/components/ui/MasterCard";
@@ -23,7 +22,6 @@ import { useAppStore } from "../../src/store";
 import type { Master } from "../../src/types";
 import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
-import { FlatList } from "react-native-gesture-handler";
 
 // Stable separator — defined outside so reference never changes
 const ItemSeparator = () => <View style={SEPARATOR_STYLE} />;
@@ -34,7 +32,7 @@ const isGlassAvailable = isGlassEffectAPIAvailable();
 export default function MastersScreen() {
   const colors = useColors();
   const { isDark } = useTheme();
-  const s = useMemo(() => makeStyles(colors), [colors]);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const masterSearch = useAppStore((state) => state.masterSearch);
@@ -60,11 +58,13 @@ export default function MastersScreen() {
         </View>
         <Text style={s.emptyTitle}>{t("masters.noMasters")}</Text>
         <Text style={s.emptyHint}>{t("masters.noMastersHint")}</Text>
-        <Button
-          title={t("masters.addMaster")}
-          onPress={() => router.push("/master/create")}
-          icon={<Plus size={16} color={colors.textOnAccent} />}
-        />
+        <View style={s.emptyBtnWrap}>
+          <Button
+            title={t("masters.addMaster")}
+            onPress={() => router.push("/master/create")}
+            icon={<Plus size={16} color={colors.textOnAccent} />}
+          />
+        </View>
       </View>
     ),
     [s, t, colors],
@@ -156,8 +156,14 @@ export default function MastersScreen() {
       </View>
 
       {loadError && (
-        <Pressable style={s.errorBanner} onPress={loadAllData} accessibilityRole="button">
-          <Text style={s.errorBannerText}>{t("common.error")} — {t("common.tapToRetry")}</Text>
+        <Pressable
+          style={s.errorBanner}
+          onPress={loadAllData}
+          accessibilityRole="button"
+        >
+          <Text style={s.errorBannerText}>
+            {t("common.error")} — {t("common.tapToRetry")}
+          </Text>
         </Pressable>
       )}
 
@@ -173,7 +179,6 @@ export default function MastersScreen() {
           data={filtered}
           renderItem={renderMaster}
           keyExtractor={keyExtractor}
-          estimatedItemSize={88}
           ItemSeparatorComponent={ItemSeparator}
           ListEmptyComponent={ListEmpty}
           contentContainerStyle={s.list}
@@ -188,7 +193,7 @@ export default function MastersScreen() {
 
 const SKELETON_KEYS = [0, 1, 2, 3];
 
-function makeStyles(c: ReturnType<typeof useColors>) {
+function makeStyles(c: ReturnType<typeof useColors>, isDark: boolean) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bgPrimary },
     header: {
@@ -216,13 +221,20 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     searchContainer: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: c.bgSearch,
-      borderRadius: BorderRadius.md,
-      height: 44,
+      backgroundColor: c.bgCard,
+      borderRadius: BorderRadius.xl,
+      height: 48,
       paddingHorizontal: 16,
       gap: 8,
       marginHorizontal: 20,
       marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.75)",
+      shadowColor: c.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 2,
     },
     searchInput: { flex: 1, fontSize: FontSize.body, color: c.textPrimary },
     subHeader: { paddingHorizontal: 20, paddingBottom: 8 },
@@ -279,6 +291,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.textTertiary,
       textAlign: "center",
       marginBottom: 8,
+    },
+    emptyBtnWrap: {
+      width: "100%",
     },
   });
 }
