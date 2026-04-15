@@ -69,10 +69,12 @@ export default function CreateProcedureScreen() {
     editId,
     locationId: defaultLocationId,
     clientId: defaultClientId,
+    masterId: defaultMasterId,
   } = useLocalSearchParams<{
     editId?: string;
     locationId?: string;
     clientId?: string;
+    masterId?: string;
   }>();
 
   const colors = useColors();
@@ -128,6 +130,22 @@ export default function CreateProcedureScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
 
+  // Auto-attach services when master is pre-filled from params and catalog has exactly 1 match
+  useEffect(() => {
+    if (isEditMode || !defaultMasterId || services.length === 0) return;
+    const master = masters.find((m) => m.id === defaultMasterId);
+    if (!master) return;
+    const masterServices = services.filter((sv) =>
+      master.positions.some(
+        (pos) => pos.toLowerCase() === sv.position.toLowerCase(),
+      ),
+    );
+    if (masterServices.length === 1) {
+      setSelectedServiceIds([masterServices[0].id]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultMasterId, services.length]);
+
   const {
     control,
     handleSubmit,
@@ -137,11 +155,17 @@ export default function CreateProcedureScreen() {
   } = useForm<ProcedureFormData>({
     resolver: zodResolver(procedureSchema),
     defaultValues: {
-      masterId: isEditMode ? (existingProc?.masterId ?? "") : "",
+      masterId: isEditMode
+        ? (existingProc?.masterId ?? "")
+        : (defaultMasterId ?? ""),
       clientId: isEditMode
         ? (existingProc?.clientId ?? "")
         : (defaultClientId ?? ""),
-      positions: isEditMode ? (existingProc?.positions ?? []) : [],
+      positions: isEditMode
+        ? (existingProc?.positions ?? [])
+        : defaultMasterId
+          ? (masters.find((m) => m.id === defaultMasterId)?.positions ?? [])
+          : [],
       notes: isEditMode ? (existingProc?.notes ?? "") : "",
     },
   });

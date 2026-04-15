@@ -118,7 +118,9 @@ export default function MasterDetailScreen() {
           {/* Compact stats */}
           <View style={styles.statsRow}>
             <View style={styles.statChip}>
-              <Text style={styles.statValue}>{master.clientsServed}</Text>
+              <Text style={styles.statValue}>
+                {new Set(procedures.map((p) => p.clientId)).size}
+              </Text>
               <Text style={styles.statLabel}>{t("masterDetail.clients")}</Text>
             </View>
             <View style={styles.statDot} />
@@ -170,7 +172,15 @@ export default function MasterDetailScreen() {
           </Text>
           <Pressable
             style={styles.addBtn}
-            onPress={() => router.push("/procedure/create")}
+            onPress={() =>
+              router.push({
+                pathname: "/procedure/create",
+                params: {
+                  masterId: id,
+                  locationId: master.locationIds?.[0] ?? "",
+                },
+              })
+            }
           >
             <Plus size={16} color={colors.textOnAccent} />
             <Text style={styles.addBtnText}>{t("common.add")}</Text>
