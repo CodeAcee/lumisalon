@@ -40,6 +40,15 @@ export interface Client {
   locationId?: string;
 }
 
+export interface Service {
+  id: string;
+  name: string;
+  position: Position;
+  price: number;
+  duration?: number;
+  archived?: boolean;
+}
+
 export interface Procedure {
   id: string;
   clientId: string;
@@ -48,6 +57,8 @@ export interface Procedure {
   locationId?: string;
   date: string;
   services: string[];
+  /** UUIDs of catalog services linked to this procedure (for revenue) */
+  serviceIds?: string[];
   positions: Position[];
   notes?: string;
   photos?: string[];
